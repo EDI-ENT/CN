@@ -105,6 +105,7 @@
     #printArea td{padding:5px 7px;border-bottom:1px solid #ddd}
   }
   .btn-cetak-nota{width:100%;margin-top:8px;padding:9px;background:var(--violet-dark);color:#fff;border:none;border-radius:10px;font-family:'Sora',sans-serif;font-weight:700;font-size:12px;cursor:pointer}
+  .btn-cetak-kecil{width:auto;margin:2px 0 4px;padding:5px 10px;background:#fff;color:var(--violet-dark);border:1px solid var(--violet-dark);border-radius:8px;font-family:'Sora',sans-serif;font-weight:600;font-size:11px;cursor:pointer}
   input[type=number]{-moz-appearance:textfield;appearance:textfield}
   input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
   .bulkbar input[type=date]{width:auto;padding:8px 10px;border:1.5px solid var(--line);border-radius:10px;font-size:13px;background:#fff}
@@ -231,7 +232,7 @@ const FN_REALISASI = "Realisasi_CN";
 const STAGE_LABEL = {
   DM: "DM", SM: "SM", FINANCE_STAFF: "Finance Staff",
   get JR_FINANCE_MANAGER() { return NJ.nama("JR_FINANCE_MANAGER", "Jr Finance Manager"); }, BOM: "Back Office Manager", DIREKTUR: "Direktur",
-  RELEASE: "Release", REALISASI: "Realisasi"
+  RELEASE: "Release", REALISASI: "Realisasi", CETAK: "Siap Cetak"
 };
 
 // ===== Cek sesi login =====
@@ -267,6 +268,7 @@ function hitungStageScope() {
   if (result.FINANCE_STAFF) {
     result.RELEASE = { scope_type: 'region', scope_values: result.FINANCE_STAFF.scope_values.slice() };
     result.REALISASI = { scope_type: 'region', scope_values: result.FINANCE_STAFF.scope_values.slice() };
+    result.CETAK = { scope_type: 'region', scope_values: result.FINANCE_STAFF.scope_values.slice() };
   }
   return result;
 }
@@ -397,7 +399,7 @@ function terapkanSaring() {
 }
 
 async function loadList() {
-  document.getElementById('listTitle').textContent = `Menunggu ${STAGE_LABEL[ACTIVE_STAGE]}`;
+  document.getElementById('listTitle').textContent = ACTIVE_STAGE === 'CETAK' ? 'CN yang sudah disetujui sampai Direktur (untuk dicetak)' : `Menunggu ${STAGE_LABEL[ACTIVE_STAGE]}`;
   const area = document.getElementById('listArea');
   area.innerHTML = '<div class="loading">Memuat...</div>';
   try {
@@ -408,11 +410,11 @@ async function loadList() {
       scope_values: scope.scope_values
     });
     const data = hasil.data || [];
-    if (!data.length) { area.innerHTML = '<div class="empty">Tidak ada yang menunggu. 👍</div>'; return; }
+    if (!data.length) { area.innerHTML = ACTIVE_STAGE === 'CETAK' ? '<div class="empty">Belum ada CN yang disetujui sampai Direktur.</div>' : '<div class="empty">Tidak ada yang menunggu. 👍</div>'; return; }
     data.sort((a, b) => String(a.region || '').localeCompare(String(b.region || ''), 'id') || String(a.created_at || '').localeCompare(String(b.created_at || '')));
     REGION_LIST = Array.from(new Set(data.map(r => r.region || '-')));
     if (REGION_AKTIF && !REGION_LIST.includes(REGION_AKTIF)) REGION_AKTIF = '';
-    area.innerHTML = barRegionHTML(data) + barMassalHTML(data) + data.map(r => renderCard(r)).join('');
+    area.innerHTML = barRegionHTML(data) + (ACTIVE_STAGE === 'CETAK' ? '<div class="bulkbar"><div class="baris1"><input type="text" id="massalCari" placeholder="Cari nama dokter, ID, region, pengaju..." oninput="saringMassal()"></div></div>' : barMassalHTML(data)) + data.map(r => renderCard(r)).join('');
     area.querySelectorAll('.card[id^="card-"]').forEach(k => { const r = CARD_DATA[k.id.replace('card-', '')]; if (r) k.dataset.region = r.region || '-'; });
     terapkanSaring();
   } catch (e) {
@@ -426,6 +428,7 @@ function renderCard(r) {
   CARD_DATA[r.id] = r;
   if (ACTIVE_STAGE === 'RELEASE') return renderCardRelease(r);
   if (ACTIVE_STAGE === 'REALISASI') return renderCardRealisasi(r);
+  if (ACTIVE_STAGE === 'CETAK') return renderCardCetak(r);
   const perluKasbon = ACTIVE_STAGE === 'FINANCE_STAFF';
   return `
     <div class="card" style="margin-bottom:0" id="card-${r.id}" data-cari="${esc([r.nama_user, r.id_user, r.region, r.diajukan_oleh, r.keterangan].join(' ').toLowerCase())}">
@@ -737,18 +740,28 @@ function kepalaKartu(r) {
     ${barisGaransi(r)}`;
 }
 
+function renderCardCetak(r) {
+  const st = { RELEASE: 'Disetujui, menunggu Release', REALISASI: 'Sudah dirilis, menunggu Realisasi', SELESAI: 'Selesai' }[r.tahap_saat_ini] || r.tahap_saat_ini;
+  return `
+    <div class="card" style="margin-bottom:0" id="card-${r.id}" data-cari="${esc([r.nama_user, r.id_user, r.region, r.diajukan_oleh, r.keterangan, r.no_kasbon].join(' ').toLowerCase())}">
+      ${kepalaKartu(r)}
+      <div class="req-tgl">Status: <b>${esc(st)}</b></div>
+      <button class="btn-cetak-nota" onclick="cetakNota(CARD_DATA[${r.id}])">🖨 Cetak</button>
+    </div>`;
+}
+
 function renderCardRelease(r) {
   return `
     <div class="card" style="margin-bottom:0" id="card-${r.id}" data-cari="${esc([r.nama_user, r.id_user, r.region, r.diajukan_oleh, r.keterangan].join(' ').toLowerCase())}">
       <label class="cekkartu"><input type="checkbox" class="cek-massal" value="${r.id}" onchange="hitungMassal()"> Pilih</label>
       ${kepalaKartu(r)}
+      <button class="btn-cetak-kecil" onclick="cetakNota(CARD_DATA[${r.id}])">🖨 Cetak nota</button>
       <div class="req-tgl">Sudah disetujui sampai Direktur. Tekan Rilis setelah dana ditransfer. Saldo dokter sudah terpotong sejak CN diajukan, jadi tidak dipotong lagi.</div>
       <label>Tanggal rilis</label>
       <input type="date" id="tglrel-${r.id}" value="${hariIniLokal()}" max="${hariIniLokal()}">
       <div class="btnrow">
         <button class="btn btn-ok" id="btn-${r.id}" onclick="prosesRelease(${r.id})">💸 Rilis Dana</button>
       </div>
-      <button class="btn-cetak-nota" onclick="cetakNota(CARD_DATA[${r.id}])">🖨 Cetak</button>
       <div class="banner" id="banner-${r.id}"></div>
     </div>`;
 }
@@ -759,6 +772,7 @@ function renderCardRealisasi(r) {
   return `
     <div class="card" style="margin-bottom:0" id="card-${r.id}">
       ${kepalaKartu(r)}
+      <button class="btn-cetak-kecil" onclick="cetakNota(CARD_DATA[${r.id}])">🖨 Cetak nota</button>
       <div class="req-tgl">Dirilis ${tglRilis} oleh ${esc(r.rilis_oleh) || '-'}</div>
 
       <label>Penyelesaian (Rp): dana yang terpakai</label>
@@ -776,7 +790,6 @@ function renderCardRealisasi(r) {
       <div class="btnrow">
         <button class="btn btn-ok" id="btn-${r.id}" onclick="prosesRealisasi(${r.id})">✓ Simpan Realisasi</button>
       </div>
-      <button class="btn-cetak-nota" onclick="cetakNota(CARD_DATA[${r.id}])">🖨 Cetak</button>
       <div class="banner" id="banner-${r.id}"></div>
     </div>`;
 }

@@ -358,7 +358,7 @@
     <!-- User terpilih + form -->
     <div class="card hide" id="cardForm">
       <h2>Ajukan Request CN</h2>
-      <div class="banner err" id="tutupBanner">Pengajuan CN sedang ditutup untuk rekap periode (tanggal 20 mulai pukul 12.00 WIB). Dibuka lagi tanggal 21 pukul 00.00 WIB.</div>
+      <div class="banner err" id="tutupBanner">Pengajuan CN sedang ditutup untuk rekap periode (tanggal 15 mulai pukul 12.00 WIB). Dibuka lagi tanggal 16 pukul 00.00 WIB.</div>
       <div class="chip" id="userChip"></div>
       <button class="ganti" onclick="gantiUser()">Ganti User</button>
 
@@ -693,11 +693,11 @@ async function cekKelayakan(jumlah) {
 }
 
 // ===== Submit CN =====
-// Pengajuan ditutup tanggal 20 mulai pukul 12.00 WIB sampai tanggal 21. Ini hanya pemberitahuan di layar;
+// Pengajuan ditutup tanggal 15 mulai pukul 12.00 WIB sampai tanggal 16. Ini hanya pemberitahuan di layar;
 // yang menentukan tetap server (Submit_req_CN), memakai jam server.
 function pengajuanDitutup() {
   const wib = new Date(Date.now() + 7 * 3600 * 1000);
-  return wib.getUTCDate() === 20 && wib.getUTCHours() >= 12;
+  return wib.getUTCDate() === 15 && wib.getUTCHours() >= 12;
 }
 function tampilkanStatusPengajuan() {
   const tutup = pengajuanDitutup();

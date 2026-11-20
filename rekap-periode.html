@@ -236,7 +236,7 @@
 
     <div class="card tanpa-cetak">
       <h2>Periode Rekap</h2>
-      <label style="margin-top:0">Periode berakhir tanggal 20 bulan</label>
+      <label style="margin-top:0">Periode berakhir tanggal 15 bulan</label>
       <input type="month" id="bulanAkhir" onchange="isiTanggal()">
       <div class="baris3" style="margin-top:6px">
         <div><label>Dari tanggal</label><input type="date" id="dari"></div>
@@ -244,7 +244,7 @@
         <div><label>Region</label><select class="pilih" id="pilihRegion" onchange="tampil()"><option value="">Semua region (satu halaman per region)</option></select></div>
       </div>
       <label class="cek"><input type="checkbox" id="cekTolak"> Tampilkan juga CN yang ditolak</label>
-      <div class="catatan">Periode memakai tanggal pengajuan CN (waktu WIB). Pilih bulan akhir, tanggal terisi otomatis dari tanggal 21 bulan sebelumnya sampai tanggal 20, dan masih bisa diubah.</div>
+      <div class="catatan">Periode memakai tanggal pengajuan CN (waktu WIB). Pilih bulan akhir, tanggal terisi otomatis dari tanggal 16 bulan sebelumnya sampai tanggal 15, dan masih bisa diubah.</div>
       <div class="aksi">
         <button class="btn-sm btn-primary" id="btnMuat" onclick="muat()">Tampilkan Rekap</button>
         <button class="btn-sm btn-ink" id="btnCetak" onclick="window.print()" disabled>Cetak</button>
@@ -349,19 +349,19 @@ const BLN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt
 function tglPanjang(iso) { const [y, m, d] = iso.split('-'); return parseInt(d, 10) + ' ' + BLN[parseInt(m, 10) - 1] + ' ' + y; }
 function tglCN(iso) { return new Date(iso).toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta', day: '2-digit', month: '2-digit', year: 'numeric' }); }
 
-// Bulan akhir bawaan: tanggal 21 ke atas masuk periode bulan depan, sebelum itu bulan ini (WIB).
+// Bulan akhir bawaan: tanggal 16 ke atas masuk periode bulan depan, sebelum itu bulan ini (WIB).
 function bulanAkhirBawaan() {
   const w = new Date(Date.now() + 7 * 3600 * 1000);
   let y = w.getUTCFullYear(), m = w.getUTCMonth() + 1;
-  if (w.getUTCDate() >= 21) { m++; if (m > 12) { m = 1; y++; } }
+  if (w.getUTCDate() >= 16) { m++; if (m > 12) { m = 1; y++; } }
   return y + '-' + String(m).padStart(2, '0');
 }
 function isiTanggal() {
   const v = document.getElementById('bulanAkhir').value; if (!v) return;
   let [y, m] = v.split('-').map(Number);
   let py = y, pm = m - 1; if (pm < 1) { pm = 12; py--; }
-  document.getElementById('sampai').value = y + '-' + String(m).padStart(2, '0') + '-20';
-  document.getElementById('dari').value = py + '-' + String(pm).padStart(2, '0') + '-21';
+  document.getElementById('sampai').value = y + '-' + String(m).padStart(2, '0') + '-15';
+  document.getElementById('dari').value = py + '-' + String(pm).padStart(2, '0') + '-16';
 }
 document.getElementById('bulanAkhir').value = bulanAkhirBawaan();
 isiTanggal();
