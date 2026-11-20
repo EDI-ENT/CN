@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kelola Staff</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F1FB; --paper:#FFFFFF; --ink:#1B1030; --muted:#6E6487; --line:#E7E1F7;
+    --violet:#7C3AED; --violet-dark:#5B21B6; --pink:#FF3D81;
+    --lime:#39E991; --lime-ink:#0E6B45; --amber:#FFB020; --amber-ink:#8A5A12; --red:#FF4D4D;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Plus Jakarta Sans',-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:720px;margin:0 auto;padding-bottom:60px}
+  .hero{position:relative;overflow:hidden;padding:36px 24px 44px;background:linear-gradient(135deg,#7C3AED 0%,#9333EA 55%,#FF3D81 100%);border-radius:0 0 32px 32px}
+  .hero::before{content:"";position:absolute;width:220px;height:220px;background:rgba(255,255,255,.15);border-radius:50%;top:-90px;right:-60px}
+  .hero::after{content:"";position:absolute;width:140px;height:140px;background:var(--lime);opacity:.35;border-radius:50%;bottom:-60px;left:-40px}
+  .hero h1{position:relative;font-family:'Sora',sans-serif;font-weight:800;font-size:30px;color:#fff;margin:0 0 6px;letter-spacing:-0.02em}
+  .hero p{position:relative;color:rgba(255,255,255,.88);margin:0;font-size:14px;font-weight:500}
+
+  @media (min-width:860px){
+    body{display:flex;justify-content:center;padding:40px 24px}
+    .wrap{max-width:720px}
+    .hero{border-radius:28px}
+    .hero h1{font-size:32px}
+    .section{padding:0}
+  }
+
+  .section{padding:20px 20px 0}
+  .card{background:var(--paper);border-radius:20px;padding:20px;margin-bottom:16px;box-shadow:0 4px 20px rgba(124,58,237,.06)}
+  .card h2{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;margin:0 0 14px;color:var(--violet-dark)}
+
+  .topbar{display:flex;justify-content:space-between;align-items:center;background:#fff;border-radius:16px;padding:12px 16px;margin:0 20px 16px;box-shadow:0 4px 16px rgba(124,58,237,.06)}
+  .topbar .nama{font-weight:700;font-size:13.5px}
+  .topbar .role{font-size:11px;color:var(--muted)}
+  .topbar .nav{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .topbar a{color:var(--violet-dark);font-weight:700;font-size:12.5px;text-decoration:none}
+  .topbar button{background:none;border:none;color:var(--pink);font-weight:700;font-size:12.5px;cursor:pointer}
+
+  label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:12px 0 6px}
+  label:first-child{margin-top:0}
+  input,textarea{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:12px;font-size:14px;font-family:inherit;color:var(--ink);background:#FBFAFE}
+  input:focus,textarea:focus{outline:none;border-color:var(--violet)}
+
+  .btn{padding:11px 18px;border:none;border-radius:12px;font-family:'Sora',sans-serif;font-weight:700;font-size:13px;cursor:pointer}
+  .btn-primary{background:var(--violet);color:#fff}
+  .btn-primary:disabled{background:#D9D2F3;cursor:not-allowed}
+  .btn-sm{padding:7px 13px;border:none;border-radius:9px;font-family:'Sora',sans-serif;font-weight:700;font-size:11.5px;cursor:pointer}
+  .btn-ink{background:var(--violet-dark);color:#fff}
+
+  .searchrow{display:flex;gap:8px}
+  .searchrow input{flex:1}
+
+  .hasil-item{border:1.5px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
+  .hasil-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .hasil-nominal{font-family:'Sora',sans-serif;font-size:17px;font-weight:800}
+  .hasil-sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .pill{font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:999px;display:inline-block;white-space:nowrap}
+  .pill-menunggu{background:#FFF4E0;color:#8A5A12}
+  .pill-selesai{background:#E3FBF0;color:#0E6B45}
+  .pill-ditolak{background:#FFE9E9;color:#B3261E}
+
+  .edit-form{display:none;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+  .edit-form.show{display:block}
+
+  .banner{border-radius:12px;padding:10px 13px;font-size:12.5px;font-weight:600;margin-top:10px;display:none}
+  .banner.show{display:block}
+  .banner.ok{background:#E3FBF0;color:var(--lime-ink)}
+  .banner.err{background:#FFE9E9;color:#B3261E}
+
+  .loading,.empty{font-size:13px;color:var(--muted);text-align:center;padding:16px 0}
+
+  .gate{max-width:360px;margin:80px auto;text-align:center;padding:0 20px}
+  .gate .emoji{font-size:40px}
+  .gate h2{font-family:'Sora',sans-serif;font-size:19px;margin:10px 0 6px}
+  .gate p{color:var(--muted);font-size:13.5px;margin:0 0 18px}
+  .gate a{display:inline-block;background:var(--violet);color:#fff;text-decoration:none;font-family:'Sora',sans-serif;font-weight:700;font-size:14px;padding:12px 24px;border-radius:14px}
+  .hide{display:none}
+
+  .rowlist .row{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1.2fr) 82px 190px;gap:10px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--line);font-size:12.5px}
+  .rowlist .row:last-child{border-bottom:none}
+  .rowlist .head{font-size:11px;font-weight:700;color:var(--muted);border-bottom:1.5px solid var(--line)}
+  .nm b{display:block;font-size:12.5px}
+  .nm span{font-size:11px;color:var(--muted)}
+  .peran{color:var(--muted);font-size:11.5px}
+  .aksi{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+  .btn-warn{background:#FFE9E9;color:#B3261E}
+  .btn-ok2{background:#E3FBF0;color:#0E6B45}
+  .pill-aktif{background:#E3FBF0;color:#0E6B45}
+  .pill-off{background:#FFE9E9;color:#B3261E}
+  .badge-admin{font-size:10px;background:#EDE7FD;color:var(--violet-dark);padding:2px 7px;border-radius:999px;margin-left:6px;font-weight:700}
+  .kotakpin{display:none;background:#FFF9E6;border:2px dashed var(--amber);border-radius:16px;padding:16px;margin:0 20px 16px}
+  .kotakpin.show{display:block}
+  .kotakpin .pin{font-family:'Sora',sans-serif;font-size:34px;font-weight:800;letter-spacing:.2em;color:var(--violet-dark);margin:6px 0}
+  .cek-list label{display:flex;align-items:center;gap:10px;margin:0;padding:9px 0;font-size:13px;color:var(--ink);font-weight:500;border-bottom:1px solid var(--line)}
+  .cek-list label:last-child{border-bottom:none}
+  .cek-list input[type=checkbox]{width:auto}
+  .cek-list .sisa{margin-left:auto;font-size:11.5px;color:var(--muted)}
+  .filter-row{display:flex;gap:8px;margin-bottom:6px}
+  .filter-row input{flex:1}
+  .filter-row select{padding:10px;border:1.5px solid var(--line);border-radius:12px;font-family:inherit;font-size:13px;background:#FBFAFE}
+  .tabel-pin{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:10px}
+  .tabel-pin th{text-align:left;font-size:11px;color:var(--muted);border-bottom:1.5px solid var(--line);padding:6px 4px}
+  .tabel-pin td{padding:7px 4px;border-bottom:1px solid var(--line)}
+  .tabel-pin td.p{font-family:'Sora',sans-serif;font-weight:800;letter-spacing:.1em}
+  .log-row{font-size:12px;padding:8px 0;border-bottom:1px solid var(--line);color:var(--ink)}
+  .log-row span{color:var(--muted);font-size:11px;display:block}
+  @media (max-width:700px){
+    .rowlist .head{display:none}
+    .rowlist .row{grid-template-columns:1fr auto;grid-template-areas:"nm st" "peran peran" "aksi aksi";row-gap:6px;padding:12px 2px}
+    .rowlist .nm{grid-area:nm} .rowlist .st{grid-area:st;text-align:right} .rowlist .peran{grid-area:peran} .rowlist .aksi{grid-area:aksi;justify-content:flex-start}
+  }
+
+
+  /* Menu dan tata letak: sidebar kiri di layar lebar, chip yang bisa digeser di HP */
+  .topbar .nav a.aktif{background:#EDE7FD;color:var(--violet-dark)}
+  @media (min-width:860px){
+    body{display:block!important;padding:0!important}
+    .wrap{display:block!important;max-width:980px!important;margin:0 0 0 272px!important;padding:32px 32px 60px 0!important}
+    .hero{position:relative!important;top:auto!important;border-radius:22px!important;padding:26px 30px!important;margin-bottom:16px}
+    .hero h1{font-size:26px!important}
+    .section{padding:0!important}
+    .topbar{position:fixed;left:24px;top:32px;width:224px;margin:0!important;flex-direction:column;align-items:stretch;gap:10px;padding:14px;max-height:calc(100vh - 64px);overflow-y:auto;z-index:20}
+    .topbar .nama{font-size:14px}
+    .topbar > div:first-child{padding:2px 6px 10px;border-bottom:1px solid var(--line)}
+    .topbar .nav{flex-direction:column;align-items:stretch;gap:2px;flex-wrap:nowrap}
+    .topbar .nav a,.topbar .nav button{display:block;width:100%;text-align:left;padding:9px 10px;border-radius:9px;font-size:13px}
+    .topbar .nav a:hover{background:#F4F1FB}
+    .topbar .nav button:hover{background:#FFE9F1}
+    .topbar .nav a.hide{display:none}
+  }
+  @media (max-width:859px){
+    body{padding:0!important}
+    .wrap{max-width:600px!important;margin:0 auto!important;padding-bottom:40px!important}
+    .hero{padding:24px 20px 28px!important;border-radius:0 0 26px 26px!important}
+    .hero h1{font-size:24px!important}
+    .section{padding:0 14px!important}
+    .topbar{display:flex!important;flex-direction:column;align-items:stretch!important;gap:10px;margin:14px 0!important;padding:12px 14px}
+    .topbar > div:first-child{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+    .topbar .role{font-size:11px}
+    .topbar .nav{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto;gap:6px!important;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+    .topbar .nav::-webkit-scrollbar{display:none}
+    .topbar .nav a,.topbar .nav button{flex:0 0 auto;white-space:nowrap;padding:8px 13px;border-radius:999px;background:#F4F1FB;font-size:12.5px}
+    .topbar .nav a.aktif{background:var(--violet);color:#fff}
+    .topbar .nav button{background:#FFE9F1}
+    .topbar .nav a.hide{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="gate hide" id="gateBelumLogin">
+  <div class="emoji">🔒</div>
+  <h2>Belum Masuk</h2>
+  <p>Silakan login dulu dengan PIN Anda.</p>
+  <a href="login.html">Ke Halaman Login</a>
+</div>
+
+<div class="gate hide" id="gateBukanAdmin">
+  <div class="emoji">🙅</div>
+  <h2>Khusus Admin</h2>
+  <p>Halaman ini hanya bisa diakses oleh akun Admin.</p>
+  <a href="ajukan-cn.html">Ke Halaman Pengajuan CN</a>
+</div>
+
+<div id="appContent" class="hide">
+<div class="wrap">
+
+  <div class="hero">
+    <h1>Kelola Staff</h1>
+    <p>Tambah akun, reset PIN, dan nonaktifkan orang yang sudah keluar.</p>
+  </div>
+
+  <div class="section">
+    <div class="topbar">
+      <div>
+        <div class="nama" id="topbarNama"></div>
+        <div class="role" id="topbarRole"></div>
+      </div>
+      <div class="nav">
+        <a href="ajukan-cn.html">Pengajuan CN</a>
+        <a href="approval.html">Approval</a>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="laporan-user.html">Laporan</a>
+        <a href="admin-import.html">Import</a>
+        <a href="koreksi-invoice.html">Koreksi</a>
+        <a href="admin-tools.html">Tools</a>
+        <a href="admin-staff.html">Staff</a>
+        <a href="admin-tim.html">Tim</a>
+        <a href="ubah-pin.html">Ubah PIN</a>
+        <button onclick="logout()">Keluar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="kotakpin" id="kotakPin"></div>
+
+  <div class="section">
+
+    <div class="card">
+      <h2>Tambah Staff</h2>
+      <label>Nama lengkap (harus sama persis dengan nama di data wilayah atau jabatan)</label>
+      <input type="text" id="inpNama" placeholder="Contoh: Budi Santoso">
+      <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-weight:500;color:var(--ink)">
+        <input type="checkbox" id="chkAdmin" style="width:auto"> Jadikan Admin (bisa mengelola semua data)
+      </label>
+      <button class="btn btn-primary" style="margin-top:14px" onclick="tambahStaff()">Buat Akun</button>
+      <div class="banner" id="bannerTambah"></div>
+    </div>
+
+    <div class="card">
+      <h2>Daftar Staff</h2>
+      <div class="filter-row">
+        <input type="text" id="inpCari" placeholder="Cari nama..." oninput="renderDaftar()">
+        <select id="selStatus" onchange="renderDaftar()">
+          <option value="semua">Semua</option>
+          <option value="aktif">Aktif</option>
+          <option value="nonaktif">Nonaktif</option>
+        </select>
+      </div>
+      <div id="infoDaftar" style="font-size:11.5px;color:var(--muted);margin:4px 0 8px"></div>
+      <div class="rowlist" id="daftarList"><div class="loading">Memuat...</div></div>
+      <div class="banner" id="bannerDaftar"></div>
+    </div>
+
+    <div class="card">
+      <h2>Buat Akun Massal dari Master Tim</h2>
+      <p style="font-size:12px;color:var(--muted);margin:-6px 0 8px">Membuat akun untuk semua orang pada jabatan yang dicentang yang <b>belum punya akun</b>, masing-masing dengan PIN acak. PIN hanya ditampilkan sekali, jadi unduh file-nya sekarang.</p>
+      <div class="cek-list" id="listJabatan"><div class="loading">Memuat...</div></div>
+      <button class="btn btn-primary" style="margin-top:14px" id="btnMassal" onclick="buatMassal()">Buat Akun yang Dicentang</button>
+      <div class="banner" id="bannerMassal"></div>
+      <div id="hasilMassal"></div>
+    </div>
+
+    <div class="card">
+      <h2>Riwayat Perubahan</h2>
+      <div id="logList"><div class="loading">Memuat...</div></div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://larbyekmthmdkdcpdbcc.supabase.co";
+const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhcmJ5ZWttdGhtZGtkY3BkYmNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyMjYxNzUsImV4cCI6MjEwNTgwMjE3NX0.0I-fqB1fVLaKR2Dz8jdrccns5tXdjDAqZdHxSwgukNk";
+const FN_STAFF = "Kelola_Staff";
+const JABATAN_DEFAULT = ['PSR', 'PSR (K)', 'AM', 'DM', 'SM', 'Staff Finance', 'Finance Jr Manager', 'Back Office Manager', 'Direktur'];
+
+const SESSION = JSON.parse(localStorage.getItem('staffSession') || 'null');
+if (!SESSION) {
+  document.getElementById('gateBelumLogin').classList.remove('hide');
+  throw new Error('STOP: belum login');
+}
+if (!SESSION.is_admin) {
+  document.getElementById('gateBukanAdmin').classList.remove('hide');
+  throw new Error('STOP: bukan admin');
+}
+document.getElementById('appContent').classList.remove('hide');
+document.getElementById('topbarNama').textContent = SESSION.nama;
+document.getElementById('topbarRole').textContent = 'Admin';
+
+function logout() { localStorage.removeItem('staffSession'); window.location.href = 'login.html'; }
+
+function tanganiSesi(hasil) {
+  // Server menolak karena token tidak sah atau sudah berakhir: kembali ke halaman login
+  if (hasil && hasil.kode === 'SESI_TIDAK_VALID') {
+    localStorage.removeItem('staffSession');
+    alert('Sesi Anda sudah berakhir. Silakan login ulang.');
+    window.location.href = 'login.html';
+  }
+  return hasil;
+}
+
+function tokenSesi() {
+  try { return (JSON.parse(localStorage.getItem('staffSession') || 'null') || {}).token || null; }
+  catch (e) { return null; }
+}
+
+function bacaSesi() {
+  try { return JSON.parse(localStorage.getItem('staffSession') || 'null'); } catch (e) { return null; }
+}
+
+// Token berlaku pendek (15 menit). Halaman memperbaruinya otomatis di belakang layar.
+// Pembaruan ditolak server kalau akunnya sudah dinonaktifkan, dan peran dibaca ulang dari database.
+let _pembaruan = null;
+function perbaruiSesi() {
+  if (_pembaruan) return _pembaruan; // satu pembaruan saja pada satu waktu
+  _pembaruan = fetch(`${SUPABASE_URL}/functions/v1/Perbarui_Sesi`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${ANON_KEY}`, "apikey": ANON_KEY },
+    body: JSON.stringify({ token: tokenSesi() })
+  })
+    .then(r => r.json())
+    .then(h => {
+      if (h && h.token) {
+        const s = bacaSesi() || {};
+        s.token = h.token; s.tokenExp = h.token_exp; s.roles = h.roles; s.is_admin = h.is_admin;
+        localStorage.setItem('staffSession', JSON.stringify(s));
+        return true;
+      }
+      if (h && h.kode === 'SESI_TIDAK_VALID') tanganiSesi(h); // akun nonaktif atau sesi habis: keluar
+      return false;
+    })
+    .catch(() => false) // jaringan putus: jangan mengeluarkan orang
+    .finally(() => { _pembaruan = null; });
+  return _pembaruan;
+}
+
+async function pastikanSesiSegar() {
+  const s = bacaSesi();
+  if (!s || !s.token) return;
+  const sisaMs = s.tokenExp ? Date.parse(s.tokenExp) - Date.now() : 0;
+  if (sisaMs < 2 * 60 * 1000) await perbaruiSesi();
+}
+
+async function panggil(fn, body, sudahCoba) {
+  await pastikanSesiSegar();
+  let res;
+  try {
+    res = await fetch(`${SUPABASE_URL}/functions/v1/${fn}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${ANON_KEY}`, "apikey": ANON_KEY },
+      body: JSON.stringify({ ...(body || {}), token: tokenSesi() })
+    });
+  } catch (e) {
+    return { error: `Tidak bisa menghubungi fungsi "${fn}". Kemungkinan fungsinya belum di-deploy, namanya berbeda, atau kodenya error saat dijalankan. Periksa di Supabase, menu Edge Functions.` };
+  }
+  let hasil;
+  try { hasil = await res.json(); }
+  catch (e) { return { error: `Jawaban dari "${fn}" tidak terbaca (status ${res.status}).` }; }
+  if (hasil && hasil.code === 'NOT_FOUND') {
+    return { error: `Fungsi "${fn}" tidak ditemukan di Supabase. Pastikan sudah dibuat dengan nama persis itu.` };
+  }
+  if (hasil && hasil.kode === 'SESI_TIDAK_VALID' && !sudahCoba && await perbaruiSesi()) {
+    return panggil(fn, body, true);
+  }
+  return tanganiSesi(hasil);
+}
+
+const aksi = (a, b) => panggil(FN_STAFF, { aksi: a, ...(b || {}) });
+
+function esc(t) {
+  return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function banner(id, tipe, teks) {
+  const el = document.getElementById(id);
+  el.className = 'banner show ' + tipe;
+  el.textContent = teks;
+}
+
+function waktuWIB(iso) {
+  return iso ? new Date(iso).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', dateStyle: 'medium', timeStyle: 'short' }) : '-';
+}
+
+// ---------- Kotak PIN (hanya tampil sekali) ----------
+function tampilkanPin(judul, nama, pin, peringatan) {
+  const k = document.getElementById('kotakPin');
+  k.innerHTML = `
+    <div style="font-size:12px;color:#8A5A12;font-weight:700">${esc(judul)}</div>
+    <div style="font-size:13px;font-weight:600;margin-top:4px">${esc(nama)}</div>
+    <div class="pin">${esc(pin)}</div>
+    <div style="font-size:12px;color:#8A5A12">PIN ini hanya ditampilkan sekali. Salin atau catat sekarang, lalu berikan langsung kepada orangnya. Setelah ditutup, PIN tidak bisa dilihat lagi (hanya bisa dibuat ulang).</div>
+    ${peringatan ? `<div class="banner show err" style="margin-top:10px">${esc(peringatan)}</div>` : ''}
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button class="btn-sm btn-ink" onclick="salinPin('${esc(pin)}')">Salin PIN</button>
+      <button class="btn-sm btn-warn" onclick="tutupPin()">Tutup</button>
+    </div>`;
+  k.classList.add('show');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function tutupPin() {
+  const k = document.getElementById('kotakPin');
+  k.classList.remove('show'); k.innerHTML = '';
+}
+async function salinPin(pin) {
+  try { await navigator.clipboard.writeText(pin); alert('PIN disalin.'); }
+  catch (e) {
+    const t = document.createElement('textarea'); t.value = pin; document.body.appendChild(t); t.select();
+    try { document.execCommand('copy'); alert('PIN disalin.'); } catch (e2) { alert('Salin manual: ' + pin); }
+    document.body.removeChild(t);
+  }
+}
+
+// ---------- Tambah ----------
+async function tambahStaff() {
+  const nama = document.getElementById('inpNama').value.trim();
+  const admin = document.getElementById('chkAdmin').checked;
+  if (nama.length < 3) return banner('bannerTambah', 'err', 'Isi nama lengkap (minimal 3 huruf).');
+  if (admin && !confirm('Akun ini akan menjadi ADMIN dan bisa mengelola semua data, termasuk akun orang lain. Lanjutkan?')) return;
+
+  banner('bannerTambah', '', 'Memproses...');
+  const h = await aksi('tambah', { nama, is_admin: admin });
+  if (h.error) return banner('bannerTambah', 'err', h.error);
+
+  document.getElementById('bannerTambah').className = 'banner';
+  document.getElementById('inpNama').value = '';
+  document.getElementById('chkAdmin').checked = false;
+  tampilkanPin('Akun dibuat', h.nama, h.pin, h.peringatan);
+  muatDaftar(); muatJabatan(); muatLog();
+}
+
+// ---------- Daftar ----------
+let DAFTAR = [];
+
+async function muatDaftar() {
+  const h = await aksi('daftar');
+  if (h.error) { document.getElementById('daftarList').innerHTML = `<div class="empty">${esc(h.error)}</div>`; return; }
+  DAFTAR = h.data || [];
+  renderDaftar();
+}
+
+function renderDaftar() {
+  const q = document.getElementById('inpCari').value.trim().toLowerCase();
+  const st = document.getElementById('selStatus').value;
+  const list = document.getElementById('daftarList');
+  const aktif = DAFTAR.filter(s => s.aktif !== false).length;
+  document.getElementById('infoDaftar').textContent = `${DAFTAR.length} akun · ${aktif} aktif · ${DAFTAR.length - aktif} nonaktif`;
+
+  const idx = [];
+  DAFTAR.forEach((s, i) => {
+    if (q && !s.nama.toLowerCase().includes(q)) return;
+    if (st === 'aktif' && s.aktif === false) return;
+    if (st === 'nonaktif' && s.aktif !== false) return;
+    idx.push(i);
+  });
+  if (!idx.length) { list.innerHTML = '<div class="empty">Tidak ada yang cocok.</div>'; return; }
+
+  list.innerHTML =
+    '<div class="row head"><div>Nama</div><div>Peran terhubung</div><div>Status</div><div></div></div>' +
+    idx.map(i => {
+      const s = DAFTAR[i];
+      const aktif = s.aktif !== false;
+      const peran = s.is_admin ? 'Admin' : ((s.peran || []).join(', ') || 'Belum terhubung ke peran');
+      return `
+      <div class="row">
+        <div class="nm"><b>${esc(s.nama)}${s.is_admin ? '<span class="badge-admin">ADMIN</span>' : ''}</b><span>${aktif ? 'Dibuat ' + waktuWIB(s.dibuat_pada) : 'Nonaktif sejak ' + waktuWIB(s.dinonaktifkan_pada)}${aktif && s.wajib_ganti_pin ? ' · <b style="color:#8A5A12">PIN awal belum diganti</b>' : ''}</span></div>
+        <div class="peran">${esc(peran)}</div>
+        <div class="st"><span class="pill ${aktif ? 'pill-aktif' : 'pill-off'}">${aktif ? 'Aktif' : 'Nonaktif'}</span></div>
+        <div class="aksi">
+          <button class="btn-sm btn-ink" onclick="resetPin(${i})">Reset PIN</button>
+          ${aktif
+            ? `<button class="btn-sm btn-warn" onclick="nonaktifkan(${i})">Nonaktifkan</button>`
+            : `<button class="btn-sm btn-ok2" onclick="aktifkan(${i})">Aktifkan</button>`}
+        </div>
+      </div>`;
+    }).join('');
+}
+
+async function resetPin(i) {
+  const s = DAFTAR[i];
+  if (!confirm(`Buat PIN baru untuk ${s.nama}?\nPIN lama langsung tidak berlaku.`)) return;
+  const h = await aksi('reset_pin', { nama: s.nama });
+  if (h.error) return banner('bannerDaftar', 'err', h.error);
+  document.getElementById('bannerDaftar').className = 'banner';
+  tampilkanPin('PIN baru dibuat', h.nama, h.pin, null);
+  muatLog();
+}
+
+async function nonaktifkan(i) {
+  const s = DAFTAR[i];
+  if (!confirm(`Nonaktifkan ${s.nama}?\n\nOrang ini tidak bisa login lagi, dan sesi yang sedang terbuka di perangkatnya berhenti paling lambat 15 menit.\nRiwayat CN atas namanya tetap tersimpan.`)) return;
+  const h = await aksi('nonaktifkan', { nama: s.nama });
+  if (h.error) return banner('bannerDaftar', 'err', h.error);
+  banner('bannerDaftar', 'ok', `${s.nama} dinonaktifkan.`);
+  muatDaftar(); muatJabatan(); muatLog();
+}
+
+async function aktifkan(i) {
+  const s = DAFTAR[i];
+  if (!confirm(`Aktifkan kembali ${s.nama}?\nSebaiknya buat PIN baru untuk akun ini setelah diaktifkan.`)) return;
+  const h = await aksi('aktifkan', { nama: s.nama });
+  if (h.error) return banner('bannerDaftar', 'err', h.error);
+  banner('bannerDaftar', 'ok', `${s.nama} diaktifkan kembali.`);
+  muatDaftar(); muatLog();
+}
+
+// ---------- Massal ----------
+let JABATAN_MASTER = [];
+let HASIL_MASSAL = [];
+
+async function muatJabatan() {
+  const h = await aksi('jabatan_master');
+  const el = document.getElementById('listJabatan');
+  if (h.error) { el.innerHTML = `<div class="empty">${esc(h.error)}</div>`; return; }
+  JABATAN_MASTER = h.data || [];
+  if (!JABATAN_MASTER.length) { el.innerHTML = '<div class="empty">Master tim kosong.</div>'; return; }
+  el.innerHTML = JABATAN_MASTER.map((j, i) => `
+    <label>
+      <input type="checkbox" id="jab-${i}" ${JABATAN_DEFAULT.includes(j.jabatan) && j.belum > 0 ? 'checked' : ''} ${j.belum === 0 ? 'disabled' : ''}>
+      ${esc(j.jabatan)}
+      <span class="sisa">${j.belum === 0 ? 'semua sudah punya akun' : j.belum + ' dari ' + j.jumlah + ' belum punya akun'}</span>
+    </label>`).join('');
+}
+
+async function buatMassal() {
+  const dipilih = JABATAN_MASTER.filter((j, i) => document.getElementById('jab-' + i) && document.getElementById('jab-' + i).checked);
+  if (!dipilih.length) return banner('bannerMassal', 'err', 'Centang minimal satu jabatan.');
+  const total = dipilih.reduce((n, j) => n + j.belum, 0);
+  if (!confirm(`Buat ${total} akun baru untuk: ${dipilih.map(j => j.jabatan).join(', ')}?\n\nPIN-nya hanya muncul sekali setelah ini, jadi siapkan untuk mengunduh file-nya.`)) return;
+
+  const btn = document.getElementById('btnMassal');
+  btn.disabled = true;
+  banner('bannerMassal', '', 'Membuat akun...');
+  try {
+    const h = await aksi('buat_massal', { jabatan: dipilih.map(j => j.jabatan) });
+    if (h.error) return banner('bannerMassal', 'err', h.error);
+    HASIL_MASSAL = h.dibuat || [];
+    if (!HASIL_MASSAL.length) return banner('bannerMassal', 'ok', h.pesan || 'Tidak ada akun baru.');
+
+    banner('bannerMassal', 'ok', `${HASIL_MASSAL.length} akun dibuat. Unduh file PIN sekarang. PIN tidak akan ditampilkan lagi.`);
+    document.getElementById('hasilMassal').innerHTML = `
+      <button class="btn btn-primary" style="margin-top:12px" onclick="unduhCSV()">Unduh Daftar PIN (CSV)</button>
+      <div style="font-size:11.5px;color:#B3261E;margin-top:6px">File ini berisi PIN. Bagikan ke tiap orang secara pribadi, lalu hapus file-nya.</div>
+      <table class="tabel-pin"><tr><th>Nama</th><th>Jabatan</th><th>PIN</th></tr>
+      ${HASIL_MASSAL.map(r => `<tr><td>${esc(r.nama)}</td><td>${esc(r.jabatan)}</td><td class="p">${esc(r.pin)}</td></tr>`).join('')}
+      </table>`;
+    muatDaftar(); muatJabatan(); muatLog();
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function unduhCSV() {
+  const q = v => '"' + String(v).replace(/"/g, '""') + '"';
+  const baris = ['Nama,Jabatan,PIN'].concat(HASIL_MASSAL.map(r => [q(r.nama), q(r.jabatan), q(r.pin)].join(',')));
+  const blob = new Blob(['\uFEFF' + baris.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'akun-baru-' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+// ---------- Riwayat ----------
+async function muatLog() {
+  const h = await aksi('log');
+  const el = document.getElementById('logList');
+  if (h.error) { el.innerHTML = `<div class="empty">${esc(h.error)}</div>`; return; }
+  const data = h.data || [];
+  if (!data.length) { el.innerHTML = '<div class="empty">Belum ada perubahan.</div>'; return; }
+  const label = { tambah: 'menambah', buat_massal: 'membuat akun massal', reset_pin: 'mereset PIN', nonaktifkan: 'menonaktifkan', aktifkan: 'mengaktifkan', ubah: 'mengubah' };
+  el.innerHTML = data.map(r => `
+    <div class="log-row"><b>${esc(r.oleh)}</b> ${esc(label[r.aksi] || r.aksi)} <b>${esc(r.target || '')}</b>${r.catatan ? ' (' + esc(r.catatan) + ')' : ''}
+    <span>${waktuWIB(r.waktu)}</span></div>`).join('');
+}
+
+muatDaftar(); muatJabatan(); muatLog();
+</script>
+<script>
+(function(){
+  var h=location.pathname.split('/').pop(), S={};
+  try{S=JSON.parse(localStorage.getItem('staffSession')||'null')||{};}catch(e){}
+  var peran=(S.roles||[]).map(function(r){return r.role;}), admin=!!S.is_admin, jr=peran.indexOf('JR_FINANCE_MANAGER')>-1;
+  var punyaTahap=['DM','SM','FINANCE_STAFF','JR_FINANCE_MANAGER','BOM','DIREKTUR'].some(function(r){return peran.indexOf(r)>-1;});
+  // Menu yang hanya muncul bila orangnya memang punya akses
+  var boleh={'approval.html':punyaTahap,'dashboard.html':admin||jr,'laporan-user.html':admin||jr,'admin-import.html':admin,'admin-tools.html':admin,'admin-staff.html':admin,'admin-tim.html':admin,'koreksi-invoice.html':admin||jr};
+  document.querySelectorAll('.topbar .nav a').forEach(function(a){
+    var t=a.getAttribute('href');
+    if(t===h)a.classList.add('aktif');
+    if(Object.prototype.hasOwnProperty.call(boleh,t)&&!boleh[t]&&t!==h)a.style.setProperty('display','none','important');
+  });
+})();
+</script>
+</body>
+</html>

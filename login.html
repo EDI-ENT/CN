@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F1FB;
+    --paper:#FFFFFF;
+    --ink:#1B1030;
+    --muted:#6E6487;
+    --line:#E7E1F7;
+    --violet:#7C3AED;
+    --violet-dark:#5B21B6;
+    --pink:#FF3D81;
+    --lime:#39E991;
+    --lime-ink:#0E6B45;
+    --red:#FF4D4D;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;min-height:100vh;
+    display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#7C3AED 0%,#9333EA 55%,#FF3D81 100%);
+    font-family:'Plus Jakarta Sans',-apple-system,sans-serif;
+    padding:20px;
+  }
+  .card{
+    background:#fff;
+    border-radius:28px;
+    padding:36px 30px;
+    max-width:360px;
+    width:100%;
+    box-shadow:0 20px 60px rgba(27,16,48,.25);
+    text-align:center;
+  }
+  .emoji{font-size:40px;margin-bottom:6px}
+  h1{
+    font-family:'Sora',sans-serif;
+    font-weight:800;
+    font-size:24px;
+    color:var(--ink);
+    margin:0 0 6px;
+  }
+  p.sub{color:var(--muted);font-size:13.5px;margin:0 0 22px}
+  input{
+    width:100%;
+    padding:14px;
+    border:1.5px solid var(--line);
+    border-radius:14px;
+    font-size:22px;
+    text-align:center;
+    letter-spacing:6px;
+    font-family:'Sora',sans-serif;
+    font-weight:700;
+    color:var(--ink);
+    background:#FBFAFE;
+  }
+  input:focus{outline:none;border-color:var(--violet)}
+  .btn{
+    width:100%;
+    margin-top:16px;
+    padding:14px;
+    border:none;
+    border-radius:14px;
+    background:var(--violet);
+    color:#fff;
+    font-family:'Sora',sans-serif;
+    font-weight:700;
+    font-size:14.5px;
+    cursor:pointer;
+  }
+  .btn:disabled{background:#D9D2F3;cursor:not-allowed}
+  .msg{
+    margin-top:14px;
+    padding:12px 14px;
+    border-radius:12px;
+    font-size:13px;
+    font-weight:600;
+    display:none;
+  }
+  .msg.show{display:block}
+  .msg.ok{background:#E3FBF0;color:var(--lime-ink)}
+  .msg.err{background:#FFE9E9;color:#B3261E}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="emoji">🔐</div>
+  <h1>Masuk</h1>
+  <p class="sub">Masukkan PIN Anda untuk lanjut</p>
+  <input type="password" id="pinInput" inputmode="numeric" maxlength="8" placeholder="••••••••" autofocus>
+  <button class="btn" id="btnLogin" onclick="doLogin()">Masuk</button>
+  <div class="msg" id="msg"></div>
+</div>
+
+<script src="nama-jabatan.js"></script>
+<script>
+const SUPABASE_URL = "https://larbyekmthmdkdcpdbcc.supabase.co";
+const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhcmJ5ZWttdGhtZGtkY3BkYmNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyMjYxNzUsImV4cCI6MjEwNTgwMjE3NX0.0I-fqB1fVLaKR2Dz8jdrccns5tXdjDAqZdHxSwgukNk";
+const FN_LOGIN = "Login_Staff";
+
+const pinInput = document.getElementById('pinInput');
+pinInput.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+pinInput.addEventListener('input', function () {
+  this.value = this.value.replace(/[^0-9]/g, '');
+});
+
+async function doLogin() {
+  const pin = pinInput.value.trim();
+  const msg = document.getElementById('msg');
+  const btn = document.getElementById('btnLogin');
+
+  if (!pin) { msg.className = 'msg show err'; msg.textContent = 'Isi PIN dulu.'; return; }
+
+  btn.disabled = true; btn.textContent = 'Memeriksa...';
+  msg.className = 'msg show';
+  msg.textContent = 'Memeriksa PIN...';
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/${FN_LOGIN}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${ANON_KEY}`,
+        'apikey': ANON_KEY
+      },
+      body: JSON.stringify({ pin })
+    });
+    const hasil = await res.json();
+
+    if (hasil.error) {
+      msg.className = 'msg show err';
+      msg.textContent = hasil.error;
+      btn.disabled = false; btn.textContent = 'Masuk';
+      pinInput.value = '';
+      pinInput.focus();
+      return;
+    }
+
+    // Simpan sesi supaya halaman lain (ajukan-cn.html, dll) tahu siapa yang login
+    localStorage.setItem('staffSession', JSON.stringify({
+      nama: hasil.nama,
+      is_admin: hasil.is_admin,
+      roles: hasil.roles,
+      token: hasil.token || null,
+      tokenExp: hasil.token_exp || null,
+      wajibGantiPin: !!hasil.wajib_ganti_pin,
+      loginTime: new Date().toISOString()
+    }));
+
+    try { await Promise.race([NJ.muat(), new Promise(r => setTimeout(r, 1500))]); } catch (e) {}
+    msg.className = 'msg show ok';
+    msg.textContent = `Berhasil masuk sebagai ${hasil.nama}. Mengalihkan...`;
+
+    setTimeout(() => {
+      window.location.href = hasil.wajib_ganti_pin ? 'ubah-pin.html' : 'ajukan-cn.html'; // PIN awal dari Admin wajib diganti dulu
+    }, 900);
+
+  } catch (e) {
+    msg.className = 'msg show err';
+    msg.textContent = 'Gagal terhubung: ' + e.message;
+    btn.disabled = false; btn.textContent = 'Masuk';
+  }
+}
+</script>
+</body>
+</html>

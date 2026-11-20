@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kelola Tim</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F1FB; --paper:#FFFFFF; --ink:#1B1030; --muted:#6E6487; --line:#E7E1F7;
+    --violet:#7C3AED; --violet-dark:#5B21B6; --pink:#FF3D81;
+    --lime:#39E991; --lime-ink:#0E6B45; --amber:#FFB020; --amber-ink:#8A5A12; --red:#FF4D4D;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Plus Jakarta Sans',-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:720px;margin:0 auto;padding-bottom:60px}
+  .hero{position:relative;overflow:hidden;padding:36px 24px 44px;background:linear-gradient(135deg,#7C3AED 0%,#9333EA 55%,#FF3D81 100%);border-radius:0 0 32px 32px}
+  .hero::before{content:"";position:absolute;width:220px;height:220px;background:rgba(255,255,255,.15);border-radius:50%;top:-90px;right:-60px}
+  .hero::after{content:"";position:absolute;width:140px;height:140px;background:var(--lime);opacity:.35;border-radius:50%;bottom:-60px;left:-40px}
+  .hero h1{position:relative;font-family:'Sora',sans-serif;font-weight:800;font-size:30px;color:#fff;margin:0 0 6px;letter-spacing:-0.02em}
+  .hero p{position:relative;color:rgba(255,255,255,.88);margin:0;font-size:14px;font-weight:500}
+
+  @media (min-width:860px){
+    body{display:flex;justify-content:center;padding:40px 24px}
+    .wrap{max-width:720px}
+    .hero{border-radius:28px}
+    .hero h1{font-size:32px}
+    .section{padding:0}
+  }
+
+  .section{padding:20px 20px 0}
+  .card{background:var(--paper);border-radius:20px;padding:20px;margin-bottom:16px;box-shadow:0 4px 20px rgba(124,58,237,.06)}
+  .card h2{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;margin:0 0 14px;color:var(--violet-dark)}
+
+  .topbar{display:flex;justify-content:space-between;align-items:center;background:#fff;border-radius:16px;padding:12px 16px;margin:0 20px 16px;box-shadow:0 4px 16px rgba(124,58,237,.06)}
+  .topbar .nama{font-weight:700;font-size:13.5px}
+  .topbar .role{font-size:11px;color:var(--muted)}
+  .topbar .nav{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .topbar a{color:var(--violet-dark);font-weight:700;font-size:12.5px;text-decoration:none}
+  .topbar button{background:none;border:none;color:var(--pink);font-weight:700;font-size:12.5px;cursor:pointer}
+
+  label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:12px 0 6px}
+  label:first-child{margin-top:0}
+  input,textarea{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:12px;font-size:14px;font-family:inherit;color:var(--ink);background:#FBFAFE}
+  input:focus,textarea:focus{outline:none;border-color:var(--violet)}
+
+  .btn{padding:11px 18px;border:none;border-radius:12px;font-family:'Sora',sans-serif;font-weight:700;font-size:13px;cursor:pointer}
+  .btn-primary{background:var(--violet);color:#fff}
+  .btn-primary:disabled{background:#D9D2F3;cursor:not-allowed}
+  .btn-sm{padding:7px 13px;border:none;border-radius:9px;font-family:'Sora',sans-serif;font-weight:700;font-size:11.5px;cursor:pointer}
+  .btn-ink{background:var(--violet-dark);color:#fff}
+
+  .searchrow{display:flex;gap:8px}
+  .searchrow input{flex:1}
+
+  .hasil-item{border:1.5px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
+  .hasil-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .hasil-nominal{font-family:'Sora',sans-serif;font-size:17px;font-weight:800}
+  .hasil-sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .pill{font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:999px;display:inline-block;white-space:nowrap}
+  .pill-menunggu{background:#FFF4E0;color:#8A5A12}
+  .pill-selesai{background:#E3FBF0;color:#0E6B45}
+  .pill-ditolak{background:#FFE9E9;color:#B3261E}
+
+  .edit-form{display:none;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+  .edit-form.show{display:block}
+
+  .banner{border-radius:12px;padding:10px 13px;font-size:12.5px;font-weight:600;margin-top:10px;display:none}
+  .banner.show{display:block}
+  .banner.ok{background:#E3FBF0;color:var(--lime-ink)}
+  .banner.err{background:#FFE9E9;color:#B3261E}
+
+  .loading,.empty{font-size:13px;color:var(--muted);text-align:center;padding:16px 0}
+
+  .gate{max-width:360px;margin:80px auto;text-align:center;padding:0 20px}
+  .gate .emoji{font-size:40px}
+  .gate h2{font-family:'Sora',sans-serif;font-size:19px;margin:10px 0 6px}
+  .gate p{color:var(--muted);font-size:13.5px;margin:0 0 18px}
+  .gate a{display:inline-block;background:var(--violet);color:#fff;text-decoration:none;font-family:'Sora',sans-serif;font-weight:700;font-size:14px;padding:12px 24px;border-radius:14px}
+  .hide{display:none}
+
+  .rowlist .row{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1.2fr) 82px 190px;gap:10px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--line);font-size:12.5px}
+  .rowlist .row:last-child{border-bottom:none}
+  .rowlist .head{font-size:11px;font-weight:700;color:var(--muted);border-bottom:1.5px solid var(--line)}
+  .nm b{display:block;font-size:12.5px}
+  .nm span{font-size:11px;color:var(--muted)}
+  .peran{color:var(--muted);font-size:11.5px}
+  .aksi{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+  .btn-warn{background:#FFE9E9;color:#B3261E}
+  .btn-ok2{background:#E3FBF0;color:#0E6B45}
+  .pill-aktif{background:#E3FBF0;color:#0E6B45}
+  .pill-off{background:#FFE9E9;color:#B3261E}
+  .badge-admin{font-size:10px;background:#EDE7FD;color:var(--violet-dark);padding:2px 7px;border-radius:999px;margin-left:6px;font-weight:700}
+  .kotakpin{display:none;background:#FFF9E6;border:2px dashed var(--amber);border-radius:16px;padding:16px;margin:0 20px 16px}
+  .kotakpin.show{display:block}
+  .kotakpin .pin{font-family:'Sora',sans-serif;font-size:34px;font-weight:800;letter-spacing:.2em;color:var(--violet-dark);margin:6px 0}
+  .cek-list label{display:flex;align-items:center;gap:10px;margin:0;padding:9px 0;font-size:13px;color:var(--ink);font-weight:500;border-bottom:1px solid var(--line)}
+  .cek-list label:last-child{border-bottom:none}
+  .cek-list input[type=checkbox]{width:auto}
+  .cek-list .sisa{margin-left:auto;font-size:11.5px;color:var(--muted)}
+  .filter-row{display:flex;gap:8px;margin-bottom:6px}
+  .filter-row input{flex:1}
+  .filter-row select{padding:10px;border:1.5px solid var(--line);border-radius:12px;font-family:inherit;font-size:13px;background:#FBFAFE}
+  .tabel-pin{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:10px}
+  .tabel-pin th{text-align:left;font-size:11px;color:var(--muted);border-bottom:1.5px solid var(--line);padding:6px 4px}
+  .tabel-pin td{padding:7px 4px;border-bottom:1px solid var(--line)}
+  .tabel-pin td.p{font-family:'Sora',sans-serif;font-weight:800;letter-spacing:.1em}
+  .log-row{font-size:12px;padding:8px 0;border-bottom:1px solid var(--line);color:var(--ink)}
+  .log-row span{color:var(--muted);font-size:11px;display:block}
+  @media (max-width:700px){
+    .rowlist .head{display:none}
+    .rowlist .row{grid-template-columns:1fr auto;grid-template-areas:"nm st" "peran peran" "aksi aksi";row-gap:6px;padding:12px 2px}
+    .rowlist .nm{grid-area:nm} .rowlist .st{grid-area:st;text-align:right} .rowlist .peran{grid-area:peran} .rowlist .aksi{grid-area:aksi;justify-content:flex-start}
+  }
+
+
+  .wrap{max-width:820px}
+  @media (min-width:860px){ .wrap{max-width:820px} }
+  .baris{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.3fr) auto;gap:10px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--line);font-size:12.5px}
+  .baris:last-child{border-bottom:none}
+  .baris .wil b{display:block;font-size:12.5px}
+  .baris .wil span{font-size:11px;color:var(--muted)}
+  .baris .pem{font-size:12.5px}
+  .kosong{color:#B3261E;font-weight:700}
+  .chip{font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:6px;white-space:nowrap}
+  .chip-aktif{background:#E3FBF0;color:#0E6B45}
+  .chip-belum{background:#FFF4E0;color:#8A5A12}
+  .chip-nonaktif{background:#FFE9E9;color:#B3261E}
+  .grup{font-family:'Sora',sans-serif;font-size:12px;font-weight:700;color:var(--violet-dark);margin:14px 0 2px}
+  .peringatan li{font-size:12.5px;margin:6px 0;color:#8A5A12}
+  .peringatan ul{padding-left:18px;margin:0}
+  .aman{font-size:13px;color:var(--lime-ink);font-weight:600}
+  .overlay{position:fixed;inset:0;background:rgba(27,16,48,.45);display:none;align-items:flex-start;justify-content:center;padding:24px 16px;overflow:auto;z-index:50}
+  .overlay.show{display:flex}
+  .modal{background:#fff;border-radius:20px;padding:22px;width:100%;max-width:460px;box-shadow:0 12px 40px rgba(27,16,48,.3)}
+  .modal h3{font-family:'Sora',sans-serif;font-size:16px;margin:0 0 4px;color:var(--violet-dark)}
+  .modal .info{font-size:12px;color:var(--muted);margin-bottom:6px}
+  .opsi{display:flex;align-items:flex-start;gap:8px;margin:8px 0;font-size:12.5px;font-weight:500;color:var(--ink)}
+  .opsi input{width:auto;margin-top:2px}
+  .tombolbaris{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+  .btn-lepas{background:#F1EDFB;color:var(--violet-dark)}
+  .lanjut{background:#FFF9E6;border:2px dashed var(--amber);border-radius:16px;padding:14px;margin:0 20px 16px;display:none}
+  .lanjut.show{display:block}
+  .lanjut .item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid #F1E3B5;font-size:12.5px}
+  .lanjut .item:first-of-type{border-top:none}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .grid2 label{margin-top:8px}
+  .njrow{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1fr) minmax(0,1fr) 130px auto;gap:8px;align-items:end;padding:10px 0;border-bottom:1px solid var(--line)}
+  .njrow:last-child{border-bottom:none}
+  .njrow label{margin:0 0 3px;font-size:10.5px}
+  .njrow input{padding:8px 10px;font-size:12.5px}
+  .njkode{font-size:12.5px;font-weight:700;padding-bottom:9px}
+  select.pilih{padding:10px;border:1.5px solid var(--line);border-radius:12px;font-family:inherit;font-size:13px;background:#FBFAFE}
+  @media (max-width:700px){
+    .baris{grid-template-columns:1fr auto}
+    .baris .pem{grid-column:1 / 2}
+    .njrow{grid-template-columns:1fr 1fr}
+    .njrow .njkode{grid-column:1 / 3;padding-bottom:0}
+    .grid2{grid-template-columns:1fr}
+  }
+
+  /* Menu dan tata letak: sidebar kiri di layar lebar, chip yang bisa digeser di HP */
+  .topbar .nav a.aktif{background:#EDE7FD;color:var(--violet-dark)}
+  @media (min-width:860px){
+    body{display:block!important;padding:0!important}
+    .wrap{display:block!important;max-width:980px!important;margin:0 0 0 272px!important;padding:32px 32px 60px 0!important}
+    .hero{position:relative!important;top:auto!important;border-radius:22px!important;padding:26px 30px!important;margin-bottom:16px}
+    .hero h1{font-size:26px!important}
+    .section{padding:0!important}
+    .topbar{position:fixed;left:24px;top:32px;width:224px;margin:0!important;flex-direction:column;align-items:stretch;gap:10px;padding:14px;max-height:calc(100vh - 64px);overflow-y:auto;z-index:20}
+    .topbar .nama{font-size:14px}
+    .topbar > div:first-child{padding:2px 6px 10px;border-bottom:1px solid var(--line)}
+    .topbar .nav{flex-direction:column;align-items:stretch;gap:2px;flex-wrap:nowrap}
+    .topbar .nav a,.topbar .nav button{display:block;width:100%;text-align:left;padding:9px 10px;border-radius:9px;font-size:13px}
+    .topbar .nav a:hover{background:#F4F1FB}
+    .topbar .nav button:hover{background:#FFE9F1}
+    .topbar .nav a.hide{display:none}
+  }
+  @media (max-width:859px){
+    body{padding:0!important}
+    .wrap{max-width:600px!important;margin:0 auto!important;padding-bottom:40px!important}
+    .hero{padding:24px 20px 28px!important;border-radius:0 0 26px 26px!important}
+    .hero h1{font-size:24px!important}
+    .section{padding:0 14px!important}
+    .topbar{display:flex!important;flex-direction:column;align-items:stretch!important;gap:10px;margin:14px 0!important;padding:12px 14px}
+    .topbar > div:first-child{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+    .topbar .role{font-size:11px}
+    .topbar .nav{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto;gap:6px!important;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+    .topbar .nav::-webkit-scrollbar{display:none}
+    .topbar .nav a,.topbar .nav button{flex:0 0 auto;white-space:nowrap;padding:8px 13px;border-radius:999px;background:#F4F1FB;font-size:12.5px}
+    .topbar .nav a.aktif{background:var(--violet);color:#fff}
+    .topbar .nav button{background:#FFE9F1}
+    .topbar .nav a.hide{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="gate hide" id="gateBelumLogin">
+  <div class="emoji">🔒</div>
+  <h2>Belum Masuk</h2>
+  <p>Silakan login dulu dengan PIN Anda.</p>
+  <a href="login.html">Ke Halaman Login</a>
+</div>
+
+<div class="gate hide" id="gateBukanAdmin">
+  <div class="emoji">🙅</div>
+  <h2>Khusus Admin</h2>
+  <p>Halaman ini hanya bisa diakses oleh akun Admin.</p>
+  <a href="ajukan-cn.html">Ke Halaman Pengajuan CN</a>
+</div>
+
+<div id="appContent" class="hide">
+<div class="wrap">
+
+  <div class="hero">
+    <h1>Kelola Tim</h1>
+    <p>Ganti SM, DM, Finance Staff, dan pemegang jabatan saat ada resign, mutasi, atau promosi.</p>
+  </div>
+
+  <div class="section">
+    <div class="topbar">
+      <div>
+        <div class="nama" id="topbarNama"></div>
+        <div class="role" id="topbarRole"></div>
+      </div>
+      <div class="nav">
+        <a href="ajukan-cn.html">Pengajuan CN</a>
+        <a href="approval.html">Approval</a>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="laporan-user.html">Laporan</a>
+        <a href="admin-import.html">Import</a>
+        <a href="koreksi-invoice.html">Koreksi</a>
+        <a href="admin-tools.html">Tools</a>
+        <a href="admin-staff.html">Staff</a>
+        <a href="admin-tim.html">Tim</a>
+        <a href="ubah-pin.html">Ubah PIN</a>
+        <button onclick="logout()">Keluar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="kotakpin" id="kotakPin"></div>
+  <div class="lanjut" id="kotakLanjut"></div>
+
+  <div class="section">
+
+    <div class="card">
+      <h2>Perlu Diperhatikan</h2>
+      <div id="listPeringatan"><div class="loading">Memuat...</div></div>
+    </div>
+
+    <div class="card">
+      <h2>Serah Terima Karyawan</h2>
+      <p style="font-size:12px;color:var(--muted);margin:-6px 0 8px">Untuk karyawan yang resign atau pindah: lihat semua jabatan yang dipegangnya, lalu pindahkan sekaligus ke penggantinya.</p>
+      <label>Nama pemegang lama</label>
+      <input type="text" id="stLama" list="listOrang" placeholder="Ketik nama..." autocomplete="off">
+      <button class="btn btn-primary" style="margin-top:12px" onclick="stLihat()">Lihat Jabatannya</button>
+      <div id="stHasil"></div>
+      <div class="banner" id="bannerSt"></div>
+    </div>
+
+    <div class="card">
+      <h2>Jabatan Pusat</h2>
+      <div id="listPusat"><div class="loading">Memuat...</div></div>
+    </div>
+
+    <div class="card">
+      <h2>SM per Region</h2>
+      <div id="listSM"><div class="loading">Memuat...</div></div>
+    </div>
+
+    <div class="card">
+      <h2>DM per District</h2>
+      <div id="listDM"><div class="loading">Memuat...</div></div>
+    </div>
+
+    <div class="card">
+      <h2>Finance Staff per Region</h2>
+      <div id="listFinance"><div class="loading">Memuat...</div></div>
+    </div>
+
+    <div class="card">
+      <h2>Master Tim</h2>
+      <p style="font-size:12px;color:var(--muted);margin:-6px 0 8px">Daftar semua orang beserta jabatan teksnya. Dipakai untuk mengubah jabatan (misalnya SPV menjadi Jr. Manager) dan menambah orang baru.</p>
+      <div class="filter-row">
+        <input type="text" id="mCari" placeholder="Cari nama atau jabatan..." oninput="renderMaster()">
+        <button class="btn-sm btn-ink" onclick="bukaMaster(null)">+ Tambah Orang</button>
+      </div>
+      <div id="infoMaster" style="font-size:11.5px;color:var(--muted);margin:4px 0 8px"></div>
+      <div id="listMaster"><div class="loading">Memuat...</div></div>
+      <div class="banner" id="bannerMaster"></div>
+
+      <div class="grup">Ganti tulisan jabatan untuk semua orang sekaligus</div>
+      <div class="grid2">
+        <div><label>Jabatan lama (persis)</label><input type="text" id="mjDari" list="listJabatanTeks" placeholder="Data Analyst Spv"></div>
+        <div><label>Jabatan baru</label><input type="text" id="mjKe" placeholder="Jr. Manager Data Analyst"></div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:12px" onclick="gantiJabatanMassal()">Ganti Tulisan Jabatan</button>
+      <div style="font-size:11.5px;color:var(--muted);margin-top:6px">Jabatan SM, NSM, dan DM tidak bisa diganti massal karena menggerakkan peran di sistem.</div>
+      <div class="banner" id="bannerMj"></div>
+    </div>
+
+    <div class="card">
+      <h2>Nama Jabatan di Aplikasi</h2>
+      <p style="font-size:12px;color:var(--muted);margin:-6px 0 8px">Nama yang dilihat pengguna di layar. Isi "nama berikutnya" dan tanggalnya supaya nama berganti sendiri pada hari itu (pukul 00.00 WIB). Kode di sistem tidak berubah, jadi data lama tetap aman.</p>
+      <div id="listNJ"><div class="loading">Memuat...</div></div>
+      <div class="banner" id="bannerNJ"></div>
+    </div>
+
+    <div class="card">
+      <h2>Riwayat Perubahan Tim</h2>
+      <div id="logList"><div class="loading">Memuat...</div></div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<datalist id="listOrang"></datalist>
+<datalist id="listJabatanTeks"></datalist>
+
+<!-- Jendela: ganti pemegang -->
+<div class="overlay" id="ovGanti">
+  <div class="modal">
+    <h3 id="gJudul">Ganti</h3>
+    <div class="info" id="gInfo"></div>
+    <label>Nama pemegang baru</label>
+    <input type="text" id="gBaru" list="listOrang" placeholder="Ketik nama..." autocomplete="off">
+    <div style="font-size:11px;color:var(--muted);margin-top:4px">Pilih dari daftar bila orangnya sudah ada. Nama baru yang belum ada akan ditambahkan ke master tim.</div>
+    <div id="gNasib" class="hide">
+      <div class="grup">Nasib pemegang lama</div>
+      <label class="opsi"><input type="radio" name="nasib" value="keluar" checked> <span>Keluar dari tim. Dihapus dari master tim.</span></label>
+      <label class="opsi"><input type="radio" name="nasib" value="pindah"> <span>Pindah jabatan lain. Tetap di master tim dengan jabatan baru:</span></label>
+      <input type="text" id="gJabLama" list="listJabatanTeks" placeholder="Contoh: PSR" style="margin-left:24px;width:calc(100% - 24px)">
+    </div>
+    <div class="banner" id="bannerG"></div>
+    <div class="tombolbaris">
+      <button class="btn btn-lepas" onclick="tutupGanti()">Batal</button>
+      <button class="btn btn-primary" id="btnG" onclick="kirimGanti()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Jendela: master tim -->
+<div class="overlay" id="ovMaster">
+  <div class="modal">
+    <h3 id="mJudul">Orang</h3>
+    <div class="grid2">
+      <div style="grid-column:1 / -1"><label>Nama</label><input type="text" id="mNama"></div>
+      <div style="grid-column:1 / -1"><label>Jabatan</label><input type="text" id="mJabatan" list="listJabatanTeks"></div>
+      <div><label>Region</label><input type="text" id="mRegion"></div>
+      <div><label>District</label><input type="text" id="mDistrict"></div>
+      <div><label>Area</label><input type="text" id="mArea"></div>
+      <div><label>Rayon</label><input type="text" id="mRayon"></div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px">SM/NSM wajib punya region. DM wajib punya region dan district. Untuk PSR dan AM, wilayah tetap mengikuti file rekap bulanan.</div>
+    <div class="banner" id="bannerM"></div>
+    <div class="tombolbaris">
+      <button class="btn btn-lepas" onclick="tutupMaster()">Batal</button>
+      <button class="btn btn-primary" id="btnM" onclick="simpanMaster()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://larbyekmthmdkdcpdbcc.supabase.co";
+const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhcmJ5ZWttdGhtZGtkY3BkYmNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyMjYxNzUsImV4cCI6MjEwNTgwMjE3NX0.0I-fqB1fVLaKR2Dz8jdrccns5tXdjDAqZdHxSwgukNk";
+const FN_STAFF = "Kelola_Staff";
+const JABATAN_DEFAULT = ['PSR', 'PSR (K)', 'AM', 'DM', 'SM', 'Staff Finance', 'Finance Jr Manager', 'Back Office Manager', 'Direktur'];
+
+const SESSION = JSON.parse(localStorage.getItem('staffSession') || 'null');
+if (!SESSION) {
+  document.getElementById('gateBelumLogin').classList.remove('hide');
+  throw new Error('STOP: belum login');
+}
+if (!SESSION.is_admin) {
+  document.getElementById('gateBukanAdmin').classList.remove('hide');
+  throw new Error('STOP: bukan admin');
+}
+document.getElementById('appContent').classList.remove('hide');
+document.getElementById('topbarNama').textContent = SESSION.nama;
+document.getElementById('topbarRole').textContent = 'Admin';
+
+function logout() { localStorage.removeItem('staffSession'); window.location.href = 'login.html'; }
+
+function tanganiSesi(hasil) {
+  // Server menolak karena token tidak sah atau sudah berakhir: kembali ke halaman login
+  if (hasil && hasil.kode === 'SESI_TIDAK_VALID') {
+    localStorage.removeItem('staffSession');
+    alert('Sesi Anda sudah berakhir. Silakan login ulang.');
+    window.location.href = 'login.html';
+  }
+  return hasil;
+}
+
+function tokenSesi() {
+  try { return (JSON.parse(localStorage.getItem('staffSession') || 'null') || {}).token || null; }
+  catch (e) { return null; }
+}
+
+function bacaSesi() {
+  try { return JSON.parse(localStorage.getItem('staffSession') || 'null'); } catch (e) { return null; }
+}
+
+// Token berlaku pendek (15 menit). Halaman memperbaruinya otomatis di belakang layar.
+// Pembaruan ditolak server kalau akunnya sudah dinonaktifkan, dan peran dibaca ulang dari database.
+let _pembaruan = null;
+function perbaruiSesi() {
+  if (_pembaruan) return _pembaruan; // satu pembaruan saja pada satu waktu
+  _pembaruan = fetch(`${SUPABASE_URL}/functions/v1/Perbarui_Sesi`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${ANON_KEY}`, "apikey": ANON_KEY },
+    body: JSON.stringify({ token: tokenSesi() })
+  })
+    .then(r => r.json())
+    .then(h => {
+      if (h && h.token) {
+        const s = bacaSesi() || {};
+        s.token = h.token; s.tokenExp = h.token_exp; s.roles = h.roles; s.is_admin = h.is_admin;
+        localStorage.setItem('staffSession', JSON.stringify(s));
+        return true;
+      }
+      if (h && h.kode === 'SESI_TIDAK_VALID') tanganiSesi(h); // akun nonaktif atau sesi habis: keluar
+      return false;
+    })
+    .catch(() => false) // jaringan putus: jangan mengeluarkan orang
+    .finally(() => { _pembaruan = null; });
+  return _pembaruan;
+}
+
+async function pastikanSesiSegar() {
+  const s = bacaSesi();
+  if (!s || !s.token) return;
+  const sisaMs = s.tokenExp ? Date.parse(s.tokenExp) - Date.now() : 0;
+  if (sisaMs < 2 * 60 * 1000) await perbaruiSesi();
+}
+
+async function panggil(fn, body, sudahCoba) {
+  await pastikanSesiSegar();
+  let res;
+  try {
+    res = await fetch(`${SUPABASE_URL}/functions/v1/${fn}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${ANON_KEY}`, "apikey": ANON_KEY },
+      body: JSON.stringify({ ...(body || {}), token: tokenSesi() })
+    });
+  } catch (e) {
+    return { error: `Tidak bisa menghubungi fungsi "${fn}". Kemungkinan fungsinya belum di-deploy, namanya berbeda, atau kodenya error saat dijalankan. Periksa di Supabase, menu Edge Functions.` };
+  }
+  let hasil;
+  try { hasil = await res.json(); }
+  catch (e) { return { error: `Jawaban dari "${fn}" tidak terbaca (status ${res.status}).` }; }
+  if (hasil && hasil.code === 'NOT_FOUND') {
+    return { error: `Fungsi "${fn}" tidak ditemukan di Supabase. Pastikan sudah dibuat dengan nama persis itu.` };
+  }
+  if (hasil && hasil.kode === 'SESI_TIDAK_VALID' && !sudahCoba && await perbaruiSesi()) {
+    return panggil(fn, body, true);
+  }
+  return tanganiSesi(hasil);
+}
+
+function esc(t) {
+  return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function banner(id, tipe, teks) {
+  const el = document.getElementById(id);
+  el.className = 'banner show ' + tipe;
+  el.textContent = teks;
+}
+
+function waktuWIB(iso) {
+  return iso ? new Date(iso).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', dateStyle: 'medium', timeStyle: 'short' }) : '-';
+}
+
+// ---------- Kotak PIN (hanya tampil sekali) ----------
+function tampilkanPin(judul, nama, pin, peringatan) {
+  const k = document.getElementById('kotakPin');
+  k.innerHTML = `
+    <div style="font-size:12px;color:#8A5A12;font-weight:700">${esc(judul)}</div>
+    <div style="font-size:13px;font-weight:600;margin-top:4px">${esc(nama)}</div>
+    <div class="pin">${esc(pin)}</div>
+    <div style="font-size:12px;color:#8A5A12">PIN ini hanya ditampilkan sekali. Salin atau catat sekarang, lalu berikan langsung kepada orangnya. Setelah ditutup, PIN tidak bisa dilihat lagi (hanya bisa dibuat ulang).</div>
+    ${peringatan ? `<div class="banner show err" style="margin-top:10px">${esc(peringatan)}</div>` : ''}
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button class="btn-sm btn-ink" onclick="salinPin('${esc(pin)}')">Salin PIN</button>
+      <button class="btn-sm btn-warn" onclick="tutupPin()">Tutup</button>
+    </div>`;
+  k.classList.add('show');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function tutupPin() {
+  const k = document.getElementById('kotakPin');
+  k.classList.remove('show'); k.innerHTML = '';
+}
+async function salinPin(pin) {
+  try { await navigator.clipboard.writeText(pin); alert('PIN disalin.'); }
+  catch (e) {
+    const t = document.createElement('textarea'); t.value = pin; document.body.appendChild(t); t.select();
+    try { document.execCommand('copy'); alert('PIN disalin.'); } catch (e2) { alert('Salin manual: ' + pin); }
+    document.body.removeChild(t);
+  }
+}
+
+
+const FN_TIM = "Kelola_Tim";
+const tim = (a, b) => panggil(FN_TIM, { aksi: a, ...(b || {}) });
+const staf = (a, b) => panggil(FN_STAFF, { aksi: a, ...(b || {}) });
+
+const LABEL_LOG = {
+  tim_ganti: 'mengganti pemegang', tim_serah_terima: 'serah terima jabatan dari',
+  tim_master_ubah: 'mengubah master tim', tim_master_tambah: 'menambah ke master tim',
+  tim_master_hapus: 'menghapus dari master tim', tim_master_jabatan: 'mengganti tulisan jabatan',
+  tim_nama_jabatan: 'mengubah nama jabatan'
+};
+
+let D = null;          // ringkasan
+let MASTER = [];       // master tim
+let G = null;          // jendela ganti yang sedang terbuka
+let ST = null;         // hasil "lihat jabatan" serah terima
+let MID = null;        // id master yang sedang diedit (null = tambah)
+
+function chip(akun) {
+  if (!akun) return '';
+  const t = { aktif: 'akun aktif', belum: 'belum punya akun', nonaktif: 'akun nonaktif' }[akun] || akun;
+  return `<span class="chip chip-${akun}">${t}</span>`;
+}
+
+function namaDengan(p) { return `${esc(p.nama)}${chip(p.akun)}`; }
+
+// ---------- Memuat dan menampilkan ----------
+async function muatSemua() {
+  const h = await tim('ringkasan');
+  if (h.error) {
+    ['listPeringatan', 'listPusat', 'listSM', 'listDM', 'listFinance', 'listNJ'].forEach(id => {
+      document.getElementById(id).innerHTML = `<div class="empty">${esc(h.error)}</div>`;
+    });
+    return;
+  }
+  D = h;
+  renderPeringatan(); renderPusat(); renderSM(); renderDM(); renderFinance(); renderNJ(); isiDaftarOrang();
+  muatMaster(); muatLog();
+}
+
+function isiDaftarOrang() {
+  document.getElementById('listOrang').innerHTML =
+    (D.orang || []).map(o => `<option value="${esc(o.nama)}">${esc(o.jabatan || (o.akun === 'aktif' ? 'punya akun' : ''))}</option>`).join('');
+}
+
+function renderPeringatan() {
+  const el = document.getElementById('listPeringatan');
+  if (!D.peringatan.length) { el.innerHTML = '<div class="aman">Semua wilayah punya pemegang dan akunnya aktif.</div>'; return; }
+  el.innerHTML = `<ul class="peringatan">${D.peringatan.map(p => `<li>${esc(p)}</li>`).join('')}</ul>`;
+}
+
+function barisWilayah(judul, sub, pemegangHtml, aksiHtml) {
+  return `<div class="baris"><div class="wil"><b>${esc(judul)}</b>${sub ? `<span>${esc(sub)}</span>` : ''}</div><div class="pem">${pemegangHtml}</div><div>${aksiHtml}</div></div>`;
+}
+
+function renderPusat() {
+  document.getElementById('listPusat').innerHTML = D.pusat.map((p, i) =>
+    barisWilayah(p.label, '',
+      p.pemegang ? `${esc(p.pemegang)}${chip(p.akun)}` : '<span class="kosong">Belum ada pemegang</span>',
+      `<button class="btn-sm btn-ink" onclick="bukaGantiPusat(${i})">Ganti</button>`)).join('');
+}
+
+function renderSM() {
+  document.getElementById('listSM').innerHTML = D.sm.map((s, i) =>
+    barisWilayah(s.region, s.ada_dokter ? '' : 'belum ada dokter di region ini',
+      s.pemegang.length ? s.pemegang.map(namaDengan).join('<br>') + (s.pemegang.length > 1 ? '' : '') : '<span class="kosong">Belum ada SM</span>',
+      `<button class="btn-sm btn-ink" onclick="bukaGantiSM(${i})">Ganti</button>`)).join('') || '<div class="empty">Belum ada data.</div>';
+}
+
+function renderDM() {
+  let out = '', terakhir = null;
+  D.dm.forEach((d, i) => {
+    if (d.region !== terakhir) { out += `<div class="grup">${esc(d.region)}</div>`; terakhir = d.region; }
+    out += barisWilayah(d.district, '',
+      d.pemegang.length ? d.pemegang.map(namaDengan).join('<br>') : '<span style="color:var(--muted)">Tanpa DM (CN langsung ke SM)</span>',
+      `<button class="btn-sm btn-ink" onclick="bukaGantiDM(${i})">${d.pemegang.length ? 'Ganti' : 'Isi DM'}</button>`);
+  });
+  document.getElementById('listDM').innerHTML = out || '<div class="empty">Belum ada data.</div>';
+}
+
+function renderFinance() {
+  document.getElementById('listFinance').innerHTML = D.finance.map((f, i) =>
+    barisWilayah(f.region, '',
+      f.pemegang ? `${esc(f.pemegang)}${chip(f.akun)}` : '<span class="kosong">Belum ada Finance Staff</span>',
+      `<button class="btn-sm btn-ink" onclick="bukaGantiFinance(${i})">${f.pemegang ? 'Ganti' : 'Isi'}</button>`)).join('') || '<div class="empty">Belum ada data.</div>';
+}
+
+// ---------- Jendela Ganti ----------
+function bukaGanti(cfg) {
+  G = cfg;
+  document.getElementById('gJudul').textContent = cfg.judul;
+  document.getElementById('gInfo').textContent = cfg.info;
+  document.getElementById('gBaru').value = '';
+  document.getElementById('gJabLama').value = '';
+  document.querySelector('input[name=nasib][value=keluar]').checked = true;
+  document.getElementById('gNasib').classList.toggle('hide', !cfg.butuhNasib);
+  document.getElementById('bannerG').className = 'banner';
+  document.getElementById('btnG').disabled = false;
+  document.getElementById('ovGanti').classList.add('show');
+  document.getElementById('gBaru').focus();
+}
+function tutupGanti() { document.getElementById('ovGanti').classList.remove('show'); G = null; }
+
+function bukaGantiPusat(i) {
+  const p = D.pusat[i];
+  bukaGanti({ jenis: 'PUSAT', kode: p.kode, judul: `Ganti ${p.label}`, info: p.pemegang ? `Sekarang: ${p.pemegang}` : 'Belum ada pemegang.', butuhNasib: false });
+}
+function bukaGantiSM(i) {
+  const s = D.sm[i];
+  bukaGanti({ jenis: 'SM', region: s.region, judul: `Ganti SM ${s.region}`,
+    info: s.pemegang.length ? `Sekarang: ${s.pemegang.map(p => p.nama).join(', ')}` : 'Belum ada SM di region ini.',
+    butuhNasib: s.pemegang.length > 0 });
+}
+function bukaGantiDM(i) {
+  const d = D.dm[i];
+  bukaGanti({ jenis: 'DM', region: d.region, district: d.district, judul: `${d.pemegang.length ? 'Ganti' : 'Isi'} DM ${d.district}`,
+    info: d.pemegang.length ? `Sekarang: ${d.pemegang.map(p => p.nama).join(', ')}` : `Region ${d.region}. Saat ini tanpa DM.`,
+    butuhNasib: d.pemegang.length > 0 });
+}
+function bukaGantiFinance(i) {
+  const f = D.finance[i];
+  bukaGanti({ jenis: 'FINANCE', region: f.region, judul: `${f.pemegang ? 'Ganti' : 'Isi'} Finance Staff ${f.region}`,
+    info: f.pemegang ? `Sekarang: ${f.pemegang}` : 'Belum ada Finance Staff di region ini.', butuhNasib: false });
+}
+
+function bacaNasib() {
+  const n = document.querySelector('input[name=nasib]:checked').value;
+  return { nasib: n, jabatan_lama: document.getElementById('gJabLama').value.trim() };
+}
+
+async function kirimGanti() {
+  if (!G) return;
+  const baru = document.getElementById('gBaru').value.trim();
+  if (baru.length < 3) return banner('bannerG', 'err', 'Isi nama pemegang baru.');
+  const body = { jenis: G.jenis, region: G.region, district: G.district, kode: G.kode, nama_baru: baru };
+  if (G.butuhNasib) {
+    Object.assign(body, bacaNasib());
+    if (body.nasib === 'pindah' && !body.jabatan_lama) return banner('bannerG', 'err', 'Isi jabatan baru untuk pemegang lama.');
+  }
+  if (!confirm(`${G.judul}\n\nPemegang baru: ${baru}\n${G.butuhNasib ? (body.nasib === 'keluar' ? 'Pemegang lama dihapus dari master tim.' : 'Pemegang lama pindah ke jabatan: ' + body.jabatan_lama) : ''}\n\nLanjutkan?`)) return;
+  const btn = document.getElementById('btnG');
+  btn.disabled = true;
+  banner('bannerG', '', 'Memproses...');
+  const h = await tim('ganti', body);
+  btn.disabled = false;
+  if (h.error) return banner('bannerG', 'err', h.error);
+  const judul = G.judul;
+  tutupGanti();
+  tampilkanLanjut(`Berhasil: ${judul}`, h);
+  muatSemua();
+}
+
+// ---------- Tindak lanjut akun ----------
+function tampilkanLanjut(judul, h) {
+  const k = document.getElementById('kotakLanjut');
+  const item = [];
+  const nama = h.nama_baru || h.nama;
+  if (h.nama_baru) {
+    if (h.akun_baru === 'belum') {
+      item.push(`<div class="item"><span><b>${esc(nama)}</b> belum punya akun, jadi belum bisa login.</span><button class="btn-sm btn-ink" onclick="buatAkun('${esc(nama).replace(/'/g, '&#39;')}')">Buat Akun</button></div>`);
+    } else if (h.akun_baru === 'nonaktif') {
+      item.push(`<div class="item"><span><b>${esc(nama)}</b> akunnya nonaktif.</span><button class="btn-sm btn-ok2" onclick="aktifkanAkun('${esc(nama).replace(/'/g, '&#39;')}')">Aktifkan</button></div>`);
+    }
+  }
+  (h.akun_lama || []).forEach(l => {
+    if (l.akun === 'aktif') {
+      item.push(`<div class="item"><span><b>${esc(l.nama)}</b> masih punya akun aktif. Nonaktifkan bila sudah keluar dari perusahaan.</span><button class="btn-sm btn-warn" onclick="nonaktifkanAkun('${esc(l.nama).replace(/'/g, '&#39;')}')">Nonaktifkan</button></div>`);
+    }
+  });
+  if (!h.nama_baru && h.akun === 'aktif') {
+    item.push(`<div class="item"><span><b>${esc(h.nama)}</b> masih punya akun aktif. Nonaktifkan bila sudah keluar dari perusahaan.</span><button class="btn-sm btn-warn" onclick="nonaktifkanAkun('${esc(h.nama).replace(/'/g, '&#39;')}')">Nonaktifkan</button></div>`);
+  }
+  k.innerHTML = `<div style="font-weight:700;font-size:13px;color:#8A5A12">${esc(judul)}</div>
+    ${h.dipindah ? `<div style="font-size:12px;margin-top:4px">Dipindahkan: ${h.dipindah.map(esc).join(', ')}</div>` : ''}
+    ${item.length ? `<div style="font-size:12px;color:#8A5A12;margin:6px 0 2px">Langkah berikutnya:</div>${item.join('')}` : '<div style="font-size:12px;margin-top:4px">Tidak ada langkah lanjutan.</div>'}
+    <div style="margin-top:10px"><button class="btn-sm btn-warn" onclick="tutupLanjut()">Tutup</button></div>`;
+  k.classList.add('show');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function tutupLanjut() { const k = document.getElementById('kotakLanjut'); k.classList.remove('show'); k.innerHTML = ''; }
+
+async function buatAkun(nama) {
+  const h = await staf('tambah', { nama, is_admin: false });
+  if (h.error) return alert(h.error);
+  tampilkanPin('Akun dibuat', h.nama, h.pin, h.peringatan);
+  tutupLanjut(); muatSemua();
+}
+async function aktifkanAkun(nama) {
+  if (!confirm(`Aktifkan kembali akun ${nama}?`)) return;
+  const h = await staf('aktifkan', { nama });
+  if (h.error) return alert(h.error);
+  alert(`${nama} diaktifkan. Sebaiknya buat PIN baru di halaman Staff.`);
+  tutupLanjut(); muatSemua();
+}
+async function nonaktifkanAkun(nama) {
+  if (!confirm(`Nonaktifkan akun ${nama}?\n\nOrang ini tidak bisa login lagi. Sesi yang sedang terbuka berhenti paling lambat 15 menit.`)) return;
+  const h = await staf('nonaktifkan', { nama });
+  if (h.error) return alert(h.error);
+  alert(`${nama} dinonaktifkan.`);
+  tutupLanjut(); muatSemua();
+}
+
+// ---------- Serah terima ----------
+async function stLihat() {
+  const nama = document.getElementById('stLama').value.trim();
+  if (!nama) return banner('bannerSt', 'err', 'Isi nama pemegang lama.');
+  banner('bannerSt', '', 'Memeriksa...');
+  const h = await tim('milik', { nama });
+  if (h.error) return banner('bannerSt', 'err', h.error);
+  document.getElementById('bannerSt').className = 'banner';
+  ST = h;
+  const el = document.getElementById('stHasil');
+  if (!h.milik.length) {
+    el.innerHTML = `<div class="banner show err">${esc(h.nama)} tidak memegang jabatan SM, DM, Finance Staff, atau jabatan pusat. Kalau orang ini keluar, hapus lewat Master Tim dan nonaktifkan akunnya di halaman Staff.</div>`;
+    return;
+  }
+  const butuhNasib = h.milik.some(m => m.jenis === 'SM' || m.jenis === 'DM');
+  const banyakSMDM = h.milik.filter(m => m.jenis === 'SM' || m.jenis === 'DM').length > 1;
+  el.innerHTML = `
+    <div class="grup">${esc(h.nama)} memegang</div>
+    <ul style="margin:4px 0 8px;padding-left:18px;font-size:12.5px">${h.milik.map(m => `<li>${esc(m.teks)}</li>`).join('')}</ul>
+    ${banyakSMDM ? '<div class="banner show err">Orang ini memegang lebih dari satu jabatan SM/DM. Ganti satu per satu lewat tombol Ganti di tiap wilayah.</div>' : `
+    <label>Nama pengganti</label>
+    <input type="text" id="stBaru" list="listOrang" placeholder="Ketik nama..." autocomplete="off">
+    ${butuhNasib ? `
+      <div class="grup">Nasib ${esc(h.nama)}</div>
+      <label class="opsi"><input type="radio" name="stNasib" value="keluar" checked> <span>Keluar dari tim. Dihapus dari master tim.</span></label>
+      <label class="opsi"><input type="radio" name="stNasib" value="pindah"> <span>Pindah jabatan lain. Tetap di master tim dengan jabatan baru:</span></label>
+      <input type="text" id="stJab" list="listJabatanTeks" placeholder="Contoh: PSR" style="margin-left:24px;width:calc(100% - 24px)">` : ''}
+    <button class="btn btn-primary" style="margin-top:14px" onclick="stKirim()">Serahkan Semua</button>`}`;
+}
+
+async function stKirim() {
+  const baru = document.getElementById('stBaru').value.trim();
+  if (baru.length < 3) return banner('bannerSt', 'err', 'Isi nama pengganti.');
+  const body = { nama_lama: ST.nama, nama_baru: baru };
+  const radio = document.querySelector('input[name=stNasib]:checked');
+  if (radio) {
+    body.nasib = radio.value;
+    body.jabatan_lama = (document.getElementById('stJab').value || '').trim();
+    if (body.nasib === 'pindah' && !body.jabatan_lama) return banner('bannerSt', 'err', 'Isi jabatan baru untuk pemegang lama.');
+  }
+  if (!confirm(`Pindahkan semua jabatan ${ST.nama} ke ${baru}?\n\n${ST.milik.map(m => '- ' + m.teks).join('\n')}`)) return;
+  banner('bannerSt', '', 'Memproses...');
+  const h = await tim('ganti_semua', body);
+  if (h.error) return banner('bannerSt', 'err', h.error);
+  document.getElementById('bannerSt').className = 'banner';
+  document.getElementById('stHasil').innerHTML = '';
+  document.getElementById('stLama').value = '';
+  tampilkanLanjut(`Serah terima ${ST.nama} ke ${h.nama_baru} selesai`, h);
+  muatSemua();
+}
+
+// ---------- Master tim ----------
+async function muatMaster() {
+  const h = await tim('master_daftar');
+  const el = document.getElementById('listMaster');
+  if (h.error) { el.innerHTML = `<div class="empty">${esc(h.error)}</div>`; return; }
+  MASTER = h.data || [];
+  const unik = Array.from(new Set(MASTER.map(m => m.jabatan))).sort();
+  document.getElementById('listJabatanTeks').innerHTML = unik.map(j => `<option value="${esc(j)}">`).join('');
+  renderMaster();
+}
+
+function renderMaster() {
+  const q = document.getElementById('mCari').value.trim().toLowerCase();
+  const idx = [];
+  MASTER.forEach((m, i) => {
+    if (q && !(m.nama.toLowerCase().includes(q) || (m.jabatan || '').toLowerCase().includes(q))) return;
+    idx.push(i);
+  });
+  document.getElementById('infoMaster').textContent = `${MASTER.length} orang${q ? ' · ' + idx.length + ' cocok' : ''}`;
+  const el = document.getElementById('listMaster');
+  if (!idx.length) { el.innerHTML = '<div class="empty">Tidak ada yang cocok.</div>'; return; }
+  el.innerHTML = idx.slice(0, 100).map(i => {
+    const m = MASTER[i];
+    const wil = [m.region, m.district].filter(Boolean).join(' / ');
+    return `<div class="baris">
+      <div class="wil"><b>${esc(m.nama)}${chip(m.akun)}</b><span>${esc(m.jabatan)}</span></div>
+      <div class="pem" style="color:var(--muted)">${esc(wil) || '-'}</div>
+      <div class="aksi"><button class="btn-sm btn-ink" onclick="bukaMaster(${i})">Ubah</button><button class="btn-sm btn-warn" onclick="hapusMaster(${i})">Hapus</button></div>
+    </div>`;
+  }).join('') + (idx.length > 100 ? `<div class="empty">Menampilkan 100 pertama. Persempit pencarian untuk melihat yang lain.</div>` : '');
+}
+
+function bukaMaster(i) {
+  const m = i == null ? null : MASTER[i];
+  MID = m ? m.id : null;
+  document.getElementById('mJudul').textContent = m ? `Ubah ${m.nama}` : 'Tambah Orang';
+  document.getElementById('mNama').value = m ? m.nama : '';
+  document.getElementById('mJabatan').value = m ? m.jabatan : '';
+  document.getElementById('mRegion').value = m && m.region ? m.region : '';
+  document.getElementById('mDistrict').value = m && m.district ? m.district : '';
+  document.getElementById('mArea').value = m && m.area ? m.area : '';
+  document.getElementById('mRayon').value = m && m.rayon ? m.rayon : '';
+  document.getElementById('bannerM').className = 'banner';
+  document.getElementById('btnM').disabled = false;
+  document.getElementById('ovMaster').classList.add('show');
+}
+function tutupMaster() { document.getElementById('ovMaster').classList.remove('show'); }
+
+async function simpanMaster() {
+  const data = {
+    nama: document.getElementById('mNama').value, jabatan: document.getElementById('mJabatan').value,
+    region: document.getElementById('mRegion').value, district: document.getElementById('mDistrict').value,
+    area: document.getElementById('mArea').value, rayon: document.getElementById('mRayon').value
+  };
+  const btn = document.getElementById('btnM');
+  btn.disabled = true;
+  banner('bannerM', '', 'Menyimpan...');
+  const h = await tim('master_simpan', { id: MID, data });
+  btn.disabled = false;
+  if (h.error) return banner('bannerM', 'err', h.error);
+  tutupMaster();
+  banner('bannerMaster', 'ok', `${h.nama_baru} disimpan.`);
+  if (MID == null && h.akun_baru === 'belum') tampilkanLanjut(`${h.nama_baru} ditambahkan ke master tim`, h);
+  muatSemua();
+}
+
+async function hapusMaster(i) {
+  const m = MASTER[i];
+  if (!confirm(`Hapus ${m.nama} dari master tim?\n\nBila dia SM atau DM, wilayahnya jadi kosong sampai Anda mengisi penggantinya.\nAkun login tidak ikut terhapus; nonaktifkan lewat langkah berikutnya.`)) return;
+  const h = await tim('master_hapus', { id: m.id });
+  if (h.error) return banner('bannerMaster', 'err', h.error);
+  banner('bannerMaster', 'ok', `${h.nama} dihapus dari master tim.`);
+  tampilkanLanjut(`${h.nama} dihapus dari master tim`, { nama: h.nama, akun: h.akun });
+  muatSemua();
+}
+
+async function gantiJabatanMassal() {
+  const dari = document.getElementById('mjDari').value.trim(), ke = document.getElementById('mjKe').value.trim();
+  if (!dari || !ke) return banner('bannerMj', 'err', 'Isi jabatan lama dan jabatan baru.');
+  const jml = MASTER.filter(m => m.jabatan === dari).length;
+  if (!confirm(`Ganti tulisan jabatan "${dari}" menjadi "${ke}" untuk ${jml} orang?`)) return;
+  const h = await tim('master_ganti_jabatan', { dari, ke });
+  if (h.error) return banner('bannerMj', 'err', h.error);
+  banner('bannerMj', 'ok', `${h.jumlah} orang diubah menjadi "${ke}".`);
+  document.getElementById('mjDari').value = ''; document.getElementById('mjKe').value = '';
+  muatSemua();
+}
+
+// ---------- Nama jabatan ----------
+const NAMA_KODE = { DM: 'DM', SM: 'SM', FINANCE_STAFF: 'Finance Staff', JR_FINANCE_MANAGER: 'Jr Finance Manager', BOM: 'Back Office Manager', DIREKTUR: 'Direktur' };
+
+function renderNJ() {
+  const el = document.getElementById('listNJ');
+  const rows = D.nama_jabatan || [];
+  if (!rows.length) { el.innerHTML = '<div class="empty">Tabel nama jabatan belum dibuat. Jalankan kelola_tim.sql di Supabase.</div>'; return; }
+  el.innerHTML = rows.map((j, i) => `
+    <div class="njrow">
+      <div class="njkode">${esc(NAMA_KODE[j.kode] || j.kode)}<div style="font-size:10.5px;color:var(--muted);font-weight:500">kode ${esc(j.kode)}</div></div>
+      <div><label>Nama sekarang</label><input type="text" id="nj-t-${i}" value="${esc(j.nama_tampil)}"></div>
+      <div><label>Nama berikutnya</label><input type="text" id="nj-b-${i}" value="${esc(j.nama_berikutnya || '')}" placeholder="(tidak ada)"></div>
+      <div><label>Mulai tanggal</label><input type="date" id="nj-d-${i}" value="${esc(j.berlaku_mulai ? String(j.berlaku_mulai).slice(0, 10) : '')}"></div>
+      <div><button class="btn-sm btn-ink" onclick="simpanNJ(${i})">Simpan</button></div>
+    </div>`).join('') +
+    `<div style="font-size:11.5px;color:var(--muted);margin-top:8px">Hari ini (WIB): ${esc(D.hari_ini)}. Pengguna melihat nama baru otomatis mulai tanggal yang diisi, setelah mereka login atau membuka ulang halaman.</div>`;
+}
+
+async function simpanNJ(i) {
+  const j = D.nama_jabatan[i];
+  const berikut = document.getElementById('nj-b-' + i).value.trim();
+  const tgl = document.getElementById('nj-d-' + i).value;
+  if (berikut && !tgl) return banner('bannerNJ', 'err', 'Isi tanggal mulai berlaku untuk nama berikutnya.');
+  const h = await tim('nama_jabatan_simpan', {
+    kode: j.kode, nama_tampil: document.getElementById('nj-t-' + i).value, nama_berikutnya: berikut, berlaku_mulai: tgl
+  });
+  if (h.error) return banner('bannerNJ', 'err', h.error);
+  banner('bannerNJ', 'ok', `Nama jabatan ${NAMA_KODE[j.kode] || j.kode} disimpan.`);
+  muatSemua();
+}
+
+// ---------- Riwayat ----------
+async function muatLog() {
+  const h = await tim('log');
+  const el = document.getElementById('logList');
+  if (h.error) { el.innerHTML = `<div class="empty">${esc(h.error)}</div>`; return; }
+  const data = h.data || [];
+  if (!data.length) { el.innerHTML = '<div class="empty">Belum ada perubahan tim.</div>'; return; }
+  el.innerHTML = data.map(r => `
+    <div class="log-row"><b>${esc(r.oleh)}</b> ${esc(LABEL_LOG[r.aksi] || r.aksi)} <b>${esc(r.target || '')}</b>${r.catatan ? ' (' + esc(r.catatan) + ')' : ''}
+    <span>${waktuWIB(r.waktu)}</span></div>`).join('');
+}
+
+muatSemua();
+</script>
+<script>
+(function(){
+  var h=location.pathname.split('/').pop(), S={};
+  try{S=JSON.parse(localStorage.getItem('staffSession')||'null')||{};}catch(e){}
+  var peran=(S.roles||[]).map(function(r){return r.role;}), admin=!!S.is_admin, jr=peran.indexOf('JR_FINANCE_MANAGER')>-1;
+  var punyaTahap=['DM','SM','FINANCE_STAFF','JR_FINANCE_MANAGER','BOM','DIREKTUR'].some(function(r){return peran.indexOf(r)>-1;});
+  // Menu yang hanya muncul bila orangnya memang punya akses
+  var boleh={'approval.html':punyaTahap,'dashboard.html':admin||jr,'laporan-user.html':admin||jr,'admin-import.html':admin,'admin-tools.html':admin,'admin-staff.html':admin,'admin-tim.html':admin,'koreksi-invoice.html':admin||jr};
+  document.querySelectorAll('.topbar .nav a').forEach(function(a){
+    var t=a.getAttribute('href');
+    if(t===h)a.classList.add('aktif');
+    if(Object.prototype.hasOwnProperty.call(boleh,t)&&!boleh[t]&&t!==h)a.style.setProperty('display','none','important');
+  });
+})();
+</script>
+</body>
+</html>

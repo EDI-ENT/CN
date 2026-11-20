@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin - Import Data</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#F4F1FB; --paper:#FFFFFF; --ink:#1B1030; --muted:#6E6487; --line:#E7E1F7;
+    --violet:#7C3AED; --violet-dark:#5B21B6; --pink:#FF3D81;
+    --lime:#39E991; --lime-ink:#0E6B45; --amber:#FFB020; --amber-ink:#8A5A12; --red:#FF4D4D;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Plus Jakarta Sans',-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:460px;margin:0 auto;padding-bottom:60px}
+  .hero{position:relative;overflow:hidden;padding:36px 24px 44px;background:linear-gradient(135deg,#7C3AED 0%,#9333EA 55%,#FF3D81 100%);border-radius:0 0 32px 32px}
+  .hero::before{content:"";position:absolute;width:220px;height:220px;background:rgba(255,255,255,.15);border-radius:50%;top:-90px;right:-60px}
+  .hero::after{content:"";position:absolute;width:140px;height:140px;background:var(--lime);opacity:.35;border-radius:50%;bottom:-60px;left:-40px}
+  .hero h1{position:relative;font-family:'Sora',sans-serif;font-weight:800;font-size:30px;color:#fff;margin:0 0 6px;letter-spacing:-0.02em}
+  .hero p{position:relative;color:rgba(255,255,255,.88);margin:0;font-size:14px;font-weight:500}
+
+  @media (min-width:860px){
+    body{display:flex;justify-content:center;padding:40px 24px}
+    .wrap{max-width:720px;display:grid;grid-template-columns:260px 1fr;gap:28px;align-items:start;padding-bottom:0}
+    .hero{border-radius:28px;position:sticky;top:40px;padding:40px 28px}
+    .hero h1{font-size:32px}
+    .section{padding:0}
+    .topbar{margin:0 0 16px}
+  }
+
+  .section{padding:20px 20px 0}
+  .card{background:var(--paper);border-radius:20px;padding:20px;margin-bottom:16px;box-shadow:0 4px 20px rgba(124,58,237,.06)}
+  .card h2{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;margin:0 0 14px;color:var(--violet-dark)}
+
+  .topbar{display:flex;justify-content:space-between;align-items:center;background:#fff;border-radius:16px;padding:12px 16px;margin:0 20px 16px;box-shadow:0 4px 16px rgba(124,58,237,.06)}
+  .topbar .nama{font-weight:700;font-size:13.5px}
+  .topbar .role{font-size:11px;color:var(--muted)}
+  .topbar .nav{display:flex;gap:14px;align-items:center}
+  .topbar a{color:var(--violet-dark);font-weight:700;font-size:12.5px;text-decoration:none}
+  .topbar button{background:none;border:none;color:var(--pink);font-weight:700;font-size:12.5px;cursor:pointer}
+
+  label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:12px 0 6px}
+  label:first-child{margin-top:0}
+  input[type=text],input[type=file],input[type=month]{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:12px;font-size:14px;font-family:inherit;color:var(--ink);background:#FBFAFE}
+  input:focus{outline:none;border-color:var(--violet)}
+
+  .btn{width:100%;padding:13px;border:none;border-radius:13px;font-family:'Sora',sans-serif;font-weight:700;font-size:14px;cursor:pointer;margin-top:14px}
+  .btn-primary{background:var(--violet);color:#fff}
+  .btn-primary:disabled{background:#D9D2F3;cursor:not-allowed}
+
+  .progress-bar{height:10px;background:var(--line);border-radius:999px;overflow:hidden;margin-top:14px}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--violet),var(--pink));width:0%;transition:width .3s}
+
+  .log{margin-top:12px;max-height:220px;overflow-y:auto;font-size:12px;color:var(--muted);background:#FBFAFE;border-radius:12px;padding:10px 12px}
+  .log div{padding:3px 0;border-bottom:1px dashed var(--line)}
+  .log div:last-child{border-bottom:none}
+
+  .banner{border-radius:14px;padding:13px 15px;font-size:13.5px;font-weight:600;margin-top:12px;display:none}
+  .banner.show{display:block}
+  .banner.ok{background:#E3FBF0;color:var(--lime-ink)}
+  .banner.err{background:#FFE9E9;color:#B3261E}
+
+  .gate{max-width:360px;margin:80px auto;text-align:center;padding:0 20px}
+  .gate .emoji{font-size:40px}
+  .gate h2{font-family:'Sora',sans-serif;font-size:19px;margin:10px 0 6px}
+  .gate p{color:var(--muted);font-size:13.5px;margin:0 0 18px}
+  .gate a{display:inline-block;background:var(--violet);color:#fff;text-decoration:none;font-family:'Sora',sans-serif;font-weight:700;font-size:14px;padding:12px 24px;border-radius:14px}
+
+  .hide{display:none}
+
+  /* Menu dan tata letak: sidebar kiri di layar lebar, chip yang bisa digeser di HP */
+  .topbar .nav a.aktif{background:#EDE7FD;color:var(--violet-dark)}
+  @media (min-width:860px){
+    body{display:block!important;padding:0!important}
+    .wrap{display:block!important;max-width:980px!important;margin:0 0 0 272px!important;padding:32px 32px 60px 0!important}
+    .hero{position:relative!important;top:auto!important;border-radius:22px!important;padding:26px 30px!important;margin-bottom:16px}
+    .hero h1{font-size:26px!important}
+    .section{padding:0!important}
+    .topbar{position:fixed;left:24px;top:32px;width:224px;margin:0!important;flex-direction:column;align-items:stretch;gap:10px;padding:14px;max-height:calc(100vh - 64px);overflow-y:auto;z-index:20}
+    .topbar .nama{font-size:14px}
+    .topbar > div:first-child{padding:2px 6px 10px;border-bottom:1px solid var(--line)}
+    .topbar .nav{flex-direction:column;align-items:stretch;gap:2px;flex-wrap:nowrap}
+    .topbar .nav a,.topbar .nav button{display:block;width:100%;text-align:left;padding:9px 10px;border-radius:9px;font-size:13px}
+    .topbar .nav a:hover{background:#F4F1FB}
+    .topbar .nav button:hover{background:#FFE9F1}
+    .topbar .nav a.hide{display:none}
+  }
+  @media (max-width:859px){
+    body{padding:0!important}
+    .wrap{max-width:600px!important;margin:0 auto!important;padding-bottom:40px!important}
+    .hero{padding:24px 20px 28px!important;border-radius:0 0 26px 26px!important}
+    .hero h1{font-size:24px!important}
+    .section{padding:0 14px!important}
+    .topbar{display:flex!important;flex-direction:column;align-items:stretch!important;gap:10px;margin:14px 0!important;padding:12px 14px}
+    .topbar > div:first-child{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+    .topbar .role{font-size:11px}
+    .topbar .nav{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto;gap:6px!important;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+    .topbar .nav::-webkit-scrollbar{display:none}
+    .topbar .nav a,.topbar .nav button{flex:0 0 auto;white-space:nowrap;padding:8px 13px;border-radius:999px;background:#F4F1FB;font-size:12.5px}
+    .topbar .nav a.aktif{background:var(--violet);color:#fff}
+    .topbar .nav button{background:#FFE9F1}
+    .topbar .nav a.hide{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="gate hide" id="gateBelumLogin">
+  <div class="emoji">🔒</div>
+  <h2>Belum Masuk</h2>
+  <p>Silakan login dulu dengan PIN Anda.</p>
+  <a href="login.html">Ke Halaman Login</a>
+</div>
+
+<div class="gate hide" id="gateBukanAdmin">
+  <div class="emoji">🙅</div>
+  <h2>Khusus Admin</h2>
+  <p>Halaman ini hanya bisa diakses oleh akun Admin.</p>
+  <a href="ajukan-cn.html">Ke Halaman Pengajuan CN</a>
+</div>
+
+<div id="appContent" class="hide">
+<div class="wrap">
+
+  <div class="hero">
+    <h1>Import Data</h1>
+    <p>Upload file Excel rekap, otomatis diproses.</p>
+  </div>
+
+  <div class="section">
+    <div class="topbar">
+      <div>
+        <div class="nama" id="topbarNama"></div>
+        <div class="role" id="topbarRole"></div>
+      </div>
+      <div class="nav">
+        <a href="ajukan-cn.html">Pengajuan CN</a>
+        <a href="approval.html">Approval</a>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="laporan-user.html">Laporan</a>
+        <a href="admin-import.html">Import</a>
+        <a href="koreksi-invoice.html">Koreksi</a>
+        <a href="admin-tools.html">Tools</a>
+        <a href="admin-staff.html">Staff</a>
+        <a href="admin-tim.html">Tim</a>
+        <a href="ubah-pin.html">Ubah PIN</a>
+        <button onclick="logout()">Keluar</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Import Data Rekap</h2>
+      <label>File Excel (.xlsx)</label>
+      <input type="file" id="fileInput" accept=".xlsx,.xls">
+      <label>Nama Tab/Sheet berisi data</label>
+      <input type="text" id="sheetName" value="Rekap">
+      <button class="btn btn-primary" id="btnImport" onclick="mulaiImport()">📥 Import Sekarang</button>
+
+      <div class="progress-bar hide" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="log hide" id="logArea"></div>
+      <div class="banner" id="banner"></div>
+    </div>
+
+    <div class="card">
+      <h2>Import CN Lama (dari Google Sheets)</h2>
+      <p style="font-size:12px;color:var(--muted);margin:-6px 0 12px">Hanya CN yang sudah selesai direalisasi. Saldo user berkurang sebesar kolom Penyelesaian. Aman diulang: CN yang sudah masuk tidak dobel.</p>
+      <label>File Excel CN lama (.xlsx)</label>
+      <input type="file" id="cnFileInput" accept=".xlsx,.xls">
+      <label>Nama Tab/Sheet</label>
+      <input type="text" id="cnSheetName" value="MDP HOLDING">
+      <label>Impor sampai bulan (kosongkan = semua bulan)</label>
+      <input type="month" id="cnSampaiBulan">
+      <button class="btn btn-primary" id="btnCnCek" onclick="importCNLama(true)">🔍 Cek Dulu (tidak mengubah data)</button>
+      <button class="btn btn-primary" id="btnCnImport" onclick="importCNLama(false)">📥 Import CN Lama</button>
+      <div class="log hide" id="cnLog"></div>
+      <div class="banner" id="cnBanner"></div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://larbyekmthmdkdcpdbcc.supabase.co";
+const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhcmJ5ZWttdGhtZGtkY3BkYmNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyMjYxNzUsImV4cCI6MjEwNTgwMjE3NX0.0I-fqB1fVLaKR2Dz8jdrccns5tXdjDAqZdHxSwgukNk";
+const FN_IMPORT_BARIS = "Import_Baris";
+const FN_OLAH_IMPORT = "Olah_Import";
+
+// ===== Cek sesi login, khusus Admin =====
+const SESSION = JSON.parse(localStorage.getItem('staffSession') || 'null');
+if (!SESSION) {
+  document.getElementById('gateBelumLogin').classList.remove('hide');
+  throw new Error('STOP: belum login');
+}
+if (!SESSION.is_admin) {
+  document.getElementById('gateBukanAdmin').classList.remove('hide');
+  throw new Error('STOP: bukan admin');
+}
+document.getElementById('appContent').classList.remove('hide');
+document.getElementById('topbarNama').textContent = SESSION.nama;
+document.getElementById('topbarRole').textContent = 'Admin';
+
+function logout() {
+  localStorage.removeItem('staffSession');
+  window.location.href = 'login.html';
+}
+
+function tambahLog(teks) {
+  const log = document.getElementById('logArea');
+  log.classList.remove('hide');
+  const baris = document.createElement('div');
+  baris.textContent = teks;
+  log.appendChild(baris);
+  log.scrollTop = log.scrollHeight;
+}
+
+function tanganiSesi(hasil) {
+  // Server menolak karena token tidak sah atau sudah berakhir: kembali ke halaman login
+  if (hasil && hasil.kode === 'SESI_TIDAK_VALID') {
+    localStorage.removeItem('staffSession');
+    alert('Sesi Anda sudah berakhir. Silakan login ulang.');
+    window.location.href = 'login.html';
+  }
+  return hasil;
+}
+
+function tokenSesi() {
+  try { return (JSON.parse(localStorage.getItem('staffSession') || 'null') || {}).token || null; }
+  catch (e) { return null; }
+}
+
+function bacaSesi() {
+  try { return JSON.parse(localStorage.getItem('staffSession') || 'null'); } catch (e) { return null; }
+}
+
+// Token berlaku pendek (15 menit). Halaman memperbaruinya otomatis di belakang layar.
+// Pembaruan ditolak server kalau akunnya sudah dinonaktifkan, dan peran dibaca ulang dari database.
+let _pembaruan = null;
+function perbaruiSesi() {
+  if (_pembaruan) return _pembaruan; // satu pembaruan saja pada satu waktu
+  _pembaruan = fetch(`${SUPABASE_URL}/functions/v1/Perbarui_Sesi`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${ANON_KEY}`, "apikey": ANON_KEY },
+    body: JSON.stringify({ token: tokenSesi() })
+  })
+    .then(r => r.json())
+    .then(h => {
+      if (h && h.token) {
+        const s = bacaSesi() || {};
+        s.token = h.token; s.tokenExp = h.token_exp; s.roles = h.roles; s.is_admin = h.is_admin;
+        localStorage.setItem('staffSession', JSON.stringify(s));
+        return true;
+      }
+      if (h && h.kode === 'SESI_TIDAK_VALID') tanganiSesi(h); // akun nonaktif atau sesi habis: keluar
+      return false;
+    })
+    .catch(() => false) // jaringan putus: jangan mengeluarkan orang
+    .finally(() => { _pembaruan = null; });
+  return _pembaruan;
+}
+
+async function pastikanSesiSegar() {
+  const s = bacaSesi();
+  if (!s || !s.token) return;
+  const sisaMs = s.tokenExp ? Date.parse(s.tokenExp) - Date.now() : 0;
+  if (sisaMs < 2 * 60 * 1000) await perbaruiSesi();
+}
+
+async function panggil(fn, body, sudahCoba) {
+  await pastikanSesiSegar();
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/${fn}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${ANON_KEY}`, "apikey": ANON_KEY },
+    body: JSON.stringify({ ...(body || {}), token: tokenSesi() })
+  });
+  const hasil = await res.json();
+  if (hasil && hasil.kode === 'SESI_TIDAK_VALID' && !sudahCoba && await perbaruiSesi()) {
+    return panggil(fn, body, true); // token baru saja diperbarui: ulangi sekali
+  }
+  return tanganiSesi(hasil);
+}
+
+// ===== Baca tanggal Excel (SELALU angka serial, karena cellDates dimatikan) =====
+// Dihitung manual dari "hari ke berapa sejak 30 Des 1899" (patokan resmi Excel),
+// semuanya pakai UTC murni di sini — AMAN karena base dan hasil akhir sama-sama UTC,
+// tidak pernah bersinggungan dengan zona waktu komputer siapa pun.
+function excelSerialToDate(v) {
+  const base = new Date(Date.UTC(1899, 11, 30));
+  base.setUTCDate(base.getUTCDate() + Math.round(v));
+  return base;
+}
+function excelDateToISO(v) {
+  if (typeof v === 'number') return excelSerialToDate(v).toISOString().slice(0, 10);
+  if (v instanceof Date) return v.toISOString().slice(0, 10); // jaga-jaga, seharusnya tidak kepakai lagi
+  return '';
+}
+function excelBulanToYM(v) {
+  if (typeof v === 'number') {
+    const d = excelSerialToDate(v);
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+  }
+  if (v instanceof Date) return `${v.getUTCFullYear()}-${String(v.getUTCMonth() + 1).padStart(2, '0')}`; // jaga-jaga
+  return String(v || '');
+}
+function str(v) { return v === null || v === undefined ? '' : String(v).trim(); }
+function num(v) {
+  // Parser angka yang TANGGUH — menangani kasus angka yang kebaca sebagai teks
+  // (ada simbol "Rp", pemisah ribuan ".", desimal ",", dll), bukan cuma Number() polos
+  // yang langsung menyerah jadi 0 kalau formatnya bukan angka murni.
+  if (v === null || v === undefined || v === '') return 0;
+  if (typeof v === 'number') return v;
+  let s = String(v).trim();
+  s = s.replace(/[^\d.,-]/g, ''); // buang simbol selain digit, titik, koma, minus
+  if (!s) return 0;
+  const lastDot = s.lastIndexOf('.'), lastComma = s.lastIndexOf(',');
+  if (lastDot >= 0 && lastComma >= 0) {
+    if (lastComma > lastDot) { s = s.replace(/\./g, '').replace(',', '.'); }
+    else { s = s.replace(/,/g, ''); }
+  } else if (lastComma >= 0) {
+    const afterComma = s.length - lastComma - 1;
+    if (s.indexOf(',') === lastComma && afterComma === 2) s = s.replace(',', '.');
+    else s = s.replace(/,/g, '');
+  } else if (lastDot >= 0) {
+    const afterDot = s.length - lastDot - 1;
+    const jumlahTitik = (s.match(/\./g) || []).length;
+    if (jumlahTitik === 1 && afterDot <= 2) { /* biarkan, sudah format desimal wajar */ }
+    else s = s.replace(/\./g, '');
+  }
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+
+async function mulaiImport() {
+  const fileInput = document.getElementById('fileInput');
+  const sheetName = document.getElementById('sheetName').value.trim() || 'Rekap';
+  const banner = document.getElementById('banner');
+  const btn = document.getElementById('btnImport');
+
+  if (!fileInput.files[0]) {
+    banner.className = 'banner show err';
+    banner.textContent = 'Pilih file Excel dulu.';
+    return;
+  }
+
+  btn.disabled = true;
+  banner.className = 'banner show';
+  banner.textContent = 'Membaca file Excel...';
+  document.getElementById('logArea').innerHTML = '';
+  document.getElementById('progressBar').classList.remove('hide');
+
+  try {
+    const file = fileInput.files[0];
+    const buffer = await file.arrayBuffer();
+    // PENTING: cellDates DIMATIKAN secara sengaja. Kalau dinyalakan, SheetJS mengubah
+    // tanggal Excel jadi objek Date dengan cara yang AMBIGU (kadang berdasar UTC, kadang
+    // berdasar zona waktu lokal komputer — tergantung file-nya), yang terbukti bikin
+    // tanggal "melompat" maju/mundur 1 hari secara TIDAK KONSISTEN antar file Excel.
+    // Dengan cellDates mati, kita SELALU dapat angka serial mentah dari Excel, lalu kita
+    // hitung sendiri tanggalnya secara manual di excelDateToISO/excelBulanToYM — ini
+    // SATU-SATUNYA cara yang pasti konsisten, tidak peduli file atau zona waktu apa pun.
+    const workbook = XLSX.read(buffer, { cellDates: false });
+
+    if (!workbook.SheetNames.includes(sheetName)) {
+      banner.className = 'banner show err';
+      banner.textContent = `Sheet "${sheetName}" tidak ditemukan. Sheet yang ada: ${workbook.SheetNames.join(', ')}`;
+      btn.disabled = false;
+      return;
+    }
+
+    const sheet = workbook.Sheets[sheetName];
+    // PENTING: beberapa file Excel (terutama hasil ekspor otomatis dari sistem lain)
+    // punya SPASI TERSEMBUNYI di sekitar nama kolom (misal " HNA*QTY " bukan "HNA*QTY")
+    // — tidak kelihatan di Excel, tapi bikin pencarian kolom gagal total (selalu 0).
+    // Makanya SETIAP nama kolom kita "bersihkan" dulu spasinya di sini, otomatis,
+    // supaya aman dipakai untuk file Excel bulan apa pun ke depannya.
+    function bersihkanNamaKolom(row) {
+      const hasil = {};
+      for (const k in row) {
+        const namaBersih = k.replace(/\u00A0/g, ' ').trim(); // \u00A0 = spasi "tak terlihat" (non-breaking space)
+        hasil[namaBersih] = row[k];
+      }
+      return hasil;
+    }
+    const jsonRows = XLSX.utils.sheet_to_json(sheet, { defval: null }).map(bersihkanNamaKolom);
+    tambahLog(`Terbaca ${jsonRows.length} baris dari file.`);
+
+    // ===== Ubah tiap baris Excel jadi format tabel rekap_transaksi =====
+    const rowsDiolah = [];
+    const seenKeys = new Set();
+    let dilewatiTanpaUser = 0, duplikatDiFile = 0;
+
+    jsonRows.forEach((r, nomorBaris) => {
+      const idUser = str(r['ID User']);
+      if (!idUser) { dilewatiTanpaUser++; return; }
+
+      const tglInvoiceISO = excelDateToISO(r['Tanggal Invoice']);
+      const noInvoice = str(r['Nomor Invoice']);
+      const kodeProduk = str(r['Kode Produk EDI']);
+      const revenue = num(r['HNA*QTY']);
+      const valueOff = num(r['Value Off Faktur']);
+      const valueOn = num(r['Value On Faktur']);
+      const valueBonus = num(r['Value Bonus']);
+      const valueCN = num(r['Value (CN+Diskon+Bonus)']);
+      const batch = str(r['Batch']);
+      const ed = excelDateToISO(r['ED']);
+
+      // PENTING: nomorBaris (posisi baris di file) SELALU ikut jadi bagian row_key.
+      // Alasannya: terbukti ada baris-baris yang SAH berbeda (misal beda Batch/ED,
+      // atau transaksi lain yang kebetulan semua kolomnya identik) sempat SALAH
+      // dianggap "duplikat" dan dibuang, sehingga total di aplikasi beda dari Google
+      // Sheets. Google Sheets sendiri TIDAK membuang baris apa pun — jadi sekarang kita
+      // ikuti itu: SETIAP baris di file selalu dianggap data sah tersendiri (karena
+      // nomor urutnya pasti unik), TIDAK PERNAH dibuang hanya karena "terlihat mirip".
+      // Import ulang file yang SAMA tetap aman (tidak dobel), karena posisi barisnya
+      // juga akan sama persis, sehingga row_key-nya sama dan otomatis diabaikan database.
+      const rowKey = [noInvoice, kodeProduk, idUser, tglInvoiceISO, revenue, valueOff, valueOn, valueBonus, valueCN, batch, ed, nomorBaris].join('|');
+      if (seenKeys.has(rowKey)) { duplikatDiFile++; return; } // praktis tidak akan pernah kejadian lagi, dibiarkan untuk jaga-jaga
+      seenKeys.add(rowKey);
+
+      rowsDiolah.push({
+        row_key: rowKey,
+        tahun: Number(r['Tahun']) || null,
+        bulan: excelBulanToYM(r['Bulan']),
+        tanggal_invoice: tglInvoiceISO || null,
+        nomor_invoice: noInvoice,
+        kode_produk: kodeProduk,
+        nama_produk: str(r['Nama Produk EDI']),
+        id_user: idUser,
+        region: str(r['New Region']),
+        nama_user: str(r['Nama User']),
+        area: str(r['New Area']),
+        district: str(r['New District']),
+        rayon: str(r['New Rayon']),
+        nama_psr: str(r['Nama PSR']),
+        nama_am: str(r['Nama SPV/AM']),
+        nama_dm: str(r['Nama DM']),
+        nama_sm: str(r['Nama SM']),
+        kode_customer: str(r['Kode Customer EDI']),
+        nama_customer: str(r['Nama Customer EDI']),
+        revenue, value_off: valueOff, value_on: valueOn, value_bonus: valueBonus, value_cn: valueCN
+      });
+    });
+
+    tambahLog(`Siap diproses: ${rowsDiolah.length} baris (dilewati tanpa ID User: ${dilewatiTanpaUser}, duplikat di dalam file: ${duplikatDiFile}).`);
+
+    // ===== Kirim bertahap, 200 baris per kelompok =====
+    const waktuMulai = new Date().toISOString();
+    const UKURAN_BATCH = 200;
+    let totalMasuk = 0;
+    const totalBatch = Math.ceil(rowsDiolah.length / UKURAN_BATCH);
+
+    for (let i = 0; i < totalBatch; i++) {
+      const batch = rowsDiolah.slice(i * UKURAN_BATCH, (i + 1) * UKURAN_BATCH);
+      banner.textContent = `Mengirim kelompok ${i + 1} dari ${totalBatch}...`;
+      document.getElementById('progressFill').style.width = `${Math.round(((i + 1) / totalBatch) * 70)}%`;
+
+      const hasil = await panggil(FN_IMPORT_BARIS, { rows: batch });
+      if (hasil.error) {
+        tambahLog(`Gagal di kelompok ${i + 1}: ${hasil.error}`);
+      } else {
+        totalMasuk += hasil.jumlah_masuk;
+        tambahLog(`Kelompok ${i + 1}/${totalBatch}: ${hasil.jumlah_masuk} baris baru masuk.`);
+      }
+    }
+
+    // ===== Olah data — DIBAGI BERTAHAP (300 baris per panggilan) supaya tidak kena "CPU Time exceeded" =====
+    let dariBarisOlah = 0;
+    let totalBarisDiolah = 0;
+    let selesaiOlah = false;
+    let putaran = 0;
+
+    while (!selesaiOlah) {
+      putaran++;
+      banner.textContent = `Mengolah data, bagian ke-${putaran}...`;
+      const hasilOlah = await panggil(FN_OLAH_IMPORT, { sejak_waktu: waktuMulai, dari_baris: dariBarisOlah });
+
+      if (hasilOlah.error) {
+        tambahLog(`Gagal mengolah bagian ke-${putaran}: ${hasilOlah.error}`);
+        banner.className = 'banner show err';
+        banner.textContent = 'Gagal mengolah data: ' + hasilOlah.error;
+        btn.disabled = false;
+        return;
+      }
+
+      totalBarisDiolah += hasilOlah.barisDiproses;
+      tambahLog(`Mengolah bagian ke-${putaran}: ${hasilOlah.barisDiproses} baris diproses.`);
+      selesaiOlah = hasilOlah.selesai;
+      dariBarisOlah = hasilOlah.barisBerikutnya;
+
+      const persenOlah = Math.min(29, Math.round((totalBarisDiolah / Math.max(rowsDiolah.length, 1)) * 29));
+      document.getElementById('progressFill').style.width = `${70 + persenOlah}%`;
+    }
+
+    document.getElementById('progressFill').style.width = '100%';
+    tambahLog(`Selesai mengolah! Total baris diolah: ${totalBarisDiolah} (dalam ${putaran} bagian).`);
+
+    banner.className = 'banner show ok';
+    banner.textContent = `Import selesai! ${totalMasuk} baris baru masuk ke rekap_transaksi, ${totalBarisDiolah} baris berhasil diolah ke saldo/rekap.`;
+
+  } catch (e) {
+    banner.className = 'banner show err';
+    banner.textContent = 'Terjadi kesalahan: ' + e.message;
+  }
+  btn.disabled = false;
+}
+
+// =====================================================================
+// IMPORT CN LAMA (dari Google Sheets) — hanya CN yang sudah direalisasi
+// =====================================================================
+const FN_IMPORT_CN_LAMA = "Import_CN_Lama";
+
+function rapikanBarisCN(row) {
+  const hasil = {};
+  for (const k in row) hasil[k.replace(/\u00A0/g, ' ').trim()] = row[k];
+  return hasil;
+}
+
+// Tanggal di sheet lama bisa berupa angka serial Excel, atau teks "17/11/2025" (hari/bulan/tahun)
+function tanggalCN(v) {
+  if (typeof v === 'number') return excelDateToISO(v);
+  if (typeof v === 'string') {
+    const m = v.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  }
+  return '';
+}
+
+function logCN(teks) {
+  const el = document.getElementById('cnLog');
+  el.classList.remove('hide');
+  const baris = document.createElement('div');
+  baris.textContent = teks;
+  el.appendChild(baris);
+  el.scrollTop = el.scrollHeight;
+}
+function rp(n) { return 'Rp ' + Math.round(Number(n) || 0).toLocaleString('id-ID'); }
+
+async function importCNLama(dry) {
+  const banner = document.getElementById('cnBanner');
+  const btnCek = document.getElementById('btnCnCek');
+  const btnImport = document.getElementById('btnCnImport');
+  const file = document.getElementById('cnFileInput').files[0];
+  const namaSheet = document.getElementById('cnSheetName').value.trim() || 'MDP HOLDING';
+  const sampaiBulan = document.getElementById('cnSampaiBulan').value; // 'YYYY-MM' atau ''
+
+  if (!file) {
+    banner.className = 'banner show err';
+    banner.textContent = 'Pilih file Excel CN lama dulu.';
+    return;
+  }
+  if (!dry && !confirm('Import ini mengubah saldo user. Sudah menjalankan "Cek Dulu" dan hasilnya sesuai?')) return;
+
+  btnCek.disabled = true; btnImport.disabled = true;
+  document.getElementById('cnLog').innerHTML = '';
+  banner.className = 'banner show';
+  banner.textContent = dry ? 'Memeriksa file...' : 'Mengimpor...';
+
+  try {
+    const wb = XLSX.read(await file.arrayBuffer(), { cellDates: false });
+    if (!wb.SheetNames.includes(namaSheet)) {
+      banner.className = 'banner show err';
+      banner.textContent = `Sheet "${namaSheet}" tidak ditemukan. Sheet yang ada: ${wb.SheetNames.join(', ')}`;
+      return;
+    }
+    const jsonRows = XLSX.utils.sheet_to_json(wb.Sheets[namaSheet], { defval: null }).map(rapikanBarisCN);
+    logCN(`Terbaca ${jsonRows.length} baris dari sheet "${namaSheet}".`);
+
+    // ---- Susun baris, beri kode unik berdasarkan ISI (bukan nomor baris) ----
+    const hitung = new Map();
+    const rows = [];
+    let tanpaId = 0, diLuarBatas = 0;
+    const tidakKonsisten = [];
+    const belumRealisasi = { n: 0, usulan: 0 };
+    const tanpaTanggal = [];
+
+    jsonRows.forEach((r, i) => {
+      const idUser = str(r['ID User']);
+      if (!idUser) { tanpaId++; return; }
+
+      const tanggal = tanggalCN(r['TANGGAL']);
+      const bulan = tanggal.slice(0, 7);
+      if (sampaiBulan && bulan && bulan > sampaiBulan) { diLuarBatas++; return; }
+
+      const region = str(r['REGION']);
+      const usulan = num(r['JUMLAH USULAN']);
+      const pen = num(r['PENYELESAIAN']);
+      const mut = num(r['MUTASI']);
+      const sisa = num(r['SISA']);
+      const tglTrf = tanggalCN(r['TANGGAL TRF FINANCE']);
+      const noKasbon = str(r['NO. KASBON']);
+
+      // Hanya CN yang SUDAH direalisasi (ada Penyelesaian atau Mutasi). Yang belum, tidak diimpor.
+      if (pen + mut <= 0) { belumRealisasi.n++; belumRealisasi.usulan += usulan; return; }
+      if (!tanggal) { tanpaTanggal.push(`baris ${i + 2}: ${idUser} ${noKasbon}`); return; }
+
+      // Pengaman saldo: Usulan harus = Penyelesaian + Mutasi + Sisa
+      if (Math.abs(usulan - (pen + mut + sisa)) > 0.5) {
+        tidakKonsisten.push(`baris ${i + 2}: ${idUser} usulan ${rp(usulan)} ≠ ${rp(pen + mut + sisa)}`);
+        return;
+      }
+
+      // Kode unik TIDAK memakai Mutasi/Sisa: pembagian keduanya bisa berubah di sheet (jumlahnya
+      // tetap Usulan - Penyelesaian) dan tidak boleh membuat CN yang sama masuk dua kali.
+      const dasar = [noKasbon, idUser, region, usulan, pen, tglTrf].join('|');
+      const n = (hitung.get(dasar) || 0) + 1;
+      hitung.set(dasar, n);
+
+      rows.push({
+        kunci: `CN|${dasar}|${n}`,
+        id_user: idUser, region,
+        nama_user: str(r['NAMA DOKTER']),
+        no_kasbon: noKasbon,
+        keterangan: str(r['KETERANGAN LENGKAP']),
+        diajukan_oleh: str(r['NAMA PENGUSUL']),
+        district: str(r['DISTRICT']), rayon: str(r['RAYON']),
+        usulan_d: num(r['USULAN (D)']), usulan_a: num(r['USULAN (A)']),
+        jumlah_diminta: usulan, penyelesaian: pen, mutasi: mut, sisa,
+        tanggal, tanggal_trf: tglTrf, bulan
+      });
+    });
+
+    if (tanpaTanggal.length) {
+      logCN(`BERHENTI: ${tanpaTanggal.length} CN sudah direalisasi tapi kolom TANGGAL-nya kosong:`);
+      tanpaTanggal.slice(0, 15).forEach(t => logCN('  ' + t));
+      banner.className = 'banner show err';
+      banner.textContent = 'Ada CN terealisasi tanpa tanggal. Lengkapi di sheet dulu.';
+      return;
+    }
+
+    if (tidakKonsisten.length) {
+      logCN(`BERHENTI: ${tidakKonsisten.length} baris angkanya tidak konsisten (Usulan ≠ Penyelesaian + Mutasi + Sisa):`);
+      tidakKonsisten.slice(0, 15).forEach(t => logCN('  ' + t));
+      banner.className = 'banner show err';
+      banner.textContent = 'Ada baris yang angkanya tidak konsisten. Perbaiki di sheet dulu.';
+      return;
+    }
+
+    // ---- Ringkasan isi file (untuk dicocokkan dengan Google Sheets) ----
+    const perBulan = {};
+    rows.forEach(r => {
+      perBulan[r.bulan] = perBulan[r.bulan] || { n: 0, usulan: 0, pen: 0 };
+      perBulan[r.bulan].n++; perBulan[r.bulan].usulan += r.jumlah_diminta; perBulan[r.bulan].pen += r.penyelesaian;
+    });
+    logCN(`Siap diproses: ${rows.length} CN` + (tanpaId ? ` (dilewati tanpa ID User: ${tanpaId})` : '') + (diLuarBatas ? ` (di luar batas bulan: ${diLuarBatas})` : ''));
+    Object.keys(perBulan).sort().forEach(b =>
+      logCN(`  ${b}: ${perBulan[b].n} CN, usulan ${rp(perBulan[b].usulan)}, penyelesaian ${rp(perBulan[b].pen)}`));
+    logCN(`Total penyelesaian di file: ${rp(rows.reduce((s, r) => s + r.penyelesaian, 0))}`);
+    if (belumRealisasi.n) logCN(`Belum direalisasi (TIDAK diimpor): ${belumRealisasi.n} CN, usulan ${rp(belumRealisasi.usulan)}`);
+
+    if (!rows.length) {
+      banner.className = 'banner show err';
+      banner.textContent = 'Tidak ada CN untuk diproses.';
+      return;
+    }
+
+    // ---- Kirim per 100 baris ----
+    let masuk = 0, sudahAda = 0, totalPen = 0;
+    const hilang = [];
+    const dialihkan = [];
+    const UKURAN = 100;
+    const totalBatch = Math.ceil(rows.length / UKURAN);
+    for (let i = 0; i < totalBatch; i++) {
+      banner.textContent = `${dry ? 'Memeriksa' : 'Mengimpor'} bagian ${i + 1} dari ${totalBatch}...`;
+      const hasil = await panggil(FN_IMPORT_CN_LAMA, { rows: rows.slice(i * UKURAN, (i + 1) * UKURAN), dry_run: dry });
+      if (hasil.error) {
+        logCN(`GAGAL di bagian ${i + 1}: ${hasil.error}`);
+        banner.className = 'banner show err';
+        banner.textContent = `Gagal di bagian ${i + 1}: ${hasil.error}. Bagian sebelumnya sudah tersimpan; aman diulang.`;
+        return;
+      }
+      masuk += hasil.masuk; sudahAda += hasil.sudah_ada; totalPen += Number(hasil.total_penyelesaian || 0);
+      (hasil.tidak_ditemukan || []).forEach(h => hilang.push(h));
+      (hasil.dialihkan || []).forEach(h => dialihkan.push(h));
+    }
+
+    logCN(`${dry ? 'AKAN masuk' : 'Masuk'}: ${masuk} CN, penyelesaian ${rp(totalPen)}`);
+    logCN(`Sudah pernah diimpor (dilewati): ${sudahAda}`);
+    logCN(`Dialihkan ke akun region lain (ID hanya punya satu akun): ${dialihkan.length}`);
+    dialihkan.slice(0, 40).forEach(h => logCN(`  ${h.id_user} ${h.nama_user}: ${h.dari} → ${h.ke} — ${rp(h.jumlah)}`));
+    logCN(`Dokter tidak ditemukan di database (tidak diimpor): ${hilang.length}`);
+    hilang.slice(0, 40).forEach(h => logCN(`  ${h.id_user} (${h.region}) ${h.nama_user} — ${rp(h.jumlah)} [${h.alasan || ''}]`));
+
+    banner.className = 'banner show ' + (hilang.length ? 'err' : 'ok');
+    banner.textContent = (dry
+      ? `Cek selesai, belum ada data yang berubah. ${masuk} CN akan masuk (${dialihkan.length} dialihkan region), ${sudahAda} sudah ada, ${hilang.length} tidak ditemukan.`
+      : `Import selesai. ${masuk} CN masuk (${dialihkan.length} dialihkan region), ${sudahAda} sudah ada, ${hilang.length} tidak ditemukan.`);
+  } catch (e) {
+    banner.className = 'banner show err';
+    banner.textContent = 'Terjadi kesalahan: ' + e.message;
+  } finally {
+    btnCek.disabled = false; btnImport.disabled = false;
+  }
+}
+</script>
+<script>
+(function(){
+  var h=location.pathname.split('/').pop(), S={};
+  try{S=JSON.parse(localStorage.getItem('staffSession')||'null')||{};}catch(e){}
+  var peran=(S.roles||[]).map(function(r){return r.role;}), admin=!!S.is_admin, jr=peran.indexOf('JR_FINANCE_MANAGER')>-1;
+  var punyaTahap=['DM','SM','FINANCE_STAFF','JR_FINANCE_MANAGER','BOM','DIREKTUR'].some(function(r){return peran.indexOf(r)>-1;});
+  // Menu yang hanya muncul bila orangnya memang punya akses
+  var boleh={'approval.html':punyaTahap,'dashboard.html':admin||jr,'laporan-user.html':admin||jr,'admin-import.html':admin,'admin-tools.html':admin,'admin-staff.html':admin,'admin-tim.html':admin,'koreksi-invoice.html':admin||jr};
+  document.querySelectorAll('.topbar .nav a').forEach(function(a){
+    var t=a.getAttribute('href');
+    if(t===h)a.classList.add('aktif');
+    if(Object.prototype.hasOwnProperty.call(boleh,t)&&!boleh[t]&&t!==h)a.style.setProperty('display','none','important');
+  });
+})();
+</script>
+</body>
+</html>

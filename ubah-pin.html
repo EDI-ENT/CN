@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ubah PIN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F1FB;
+    --paper:#FFFFFF;
+    --ink:#1B1030;
+    --muted:#6E6487;
+    --line:#E7E1F7;
+    --violet:#7C3AED;
+    --violet-dark:#5B21B6;
+    --pink:#FF3D81;
+    --lime:#39E991;
+    --lime-ink:#0E6B45;
+    --red:#FF4D4D;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;min-height:100vh;
+    display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#7C3AED 0%,#9333EA 55%,#FF3D81 100%);
+    font-family:'Plus Jakarta Sans',-apple-system,sans-serif;
+    padding:20px;
+  }
+  .card{
+    background:#fff;
+    border-radius:28px;
+    padding:36px 30px;
+    max-width:360px;
+    width:100%;
+    box-shadow:0 20px 60px rgba(27,16,48,.25);
+    text-align:center;
+  }
+  .emoji{font-size:40px;margin-bottom:6px}
+  h1{
+    font-family:'Sora',sans-serif;
+    font-weight:800;
+    font-size:24px;
+    color:var(--ink);
+    margin:0 0 6px;
+  }
+  p.sub{color:var(--muted);font-size:13.5px;margin:0 0 22px}
+  input{
+    width:100%;
+    padding:14px;
+    border:1.5px solid var(--line);
+    border-radius:14px;
+    font-size:22px;
+    text-align:center;
+    letter-spacing:6px;
+    font-family:'Sora',sans-serif;
+    font-weight:700;
+    color:var(--ink);
+    background:#FBFAFE;
+  }
+  input:focus{outline:none;border-color:var(--violet)}
+  .btn{
+    width:100%;
+    margin-top:16px;
+    padding:14px;
+    border:none;
+    border-radius:14px;
+    background:var(--violet);
+    color:#fff;
+    font-family:'Sora',sans-serif;
+    font-weight:700;
+    font-size:14.5px;
+    cursor:pointer;
+  }
+  .btn:disabled{background:#D9D2F3;cursor:not-allowed}
+  .msg{
+    margin-top:14px;
+    padding:12px 14px;
+    border-radius:12px;
+    font-size:13px;
+    font-weight:600;
+    display:none;
+  }
+  .msg.show{display:block}
+  .msg.ok{background:#E3FBF0;color:var(--lime-ink)}
+  .msg.err{background:#FFE9E9;color:#B3261E}
+  label{display:block;text-align:left;font-size:12px;font-weight:700;color:var(--muted);margin:14px 0 6px}
+  .aturan{font-size:12px;color:var(--muted);text-align:left;margin:14px 0 0;line-height:1.5}
+  a.kembali{display:inline-block;margin-top:16px;font-size:13px;font-weight:700;color:var(--violet-dark);text-decoration:none}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="emoji">🔑</div>
+  <h1 id="judul">Ubah PIN</h1>
+  <p class="sub" id="sub">Pilih PIN baru Anda sendiri.</p>
+
+  <label for="pinLama">PIN lama</label>
+  <input type="password" id="pinLama" inputmode="numeric" maxlength="8" placeholder="••••••••" autocomplete="off" autofocus>
+  <label for="pinBaru">PIN baru (8 angka)</label>
+  <input type="password" id="pinBaru" inputmode="numeric" maxlength="8" placeholder="••••••••" autocomplete="new-password">
+  <label for="pinUlang">Ulangi PIN baru</label>
+  <input type="password" id="pinUlang" inputmode="numeric" maxlength="8" placeholder="••••••••" autocomplete="new-password">
+
+  <p class="aturan">PIN harus <b>8 angka</b>. Jangan memakai angka berulang atau berurutan (misalnya 11111111 atau 12345678), dan jangan memakai tanggal lahir. PIN ini yang membuka akun Anda, jadi jangan dibagikan ke siapa pun.</p>
+
+  <button class="btn" id="btnSimpan" onclick="simpan()">Simpan PIN Baru</button>
+  <div class="msg" id="msg"></div>
+  <a class="kembali" id="linkKembali" href="ajukan-cn.html">← Kembali</a>
+</div>
+
+<script>
+const SUPABASE_URL = "https://larbyekmthmdkdcpdbcc.supabase.co";
+const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhcmJ5ZWttdGhtZGtkY3BkYmNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyMjYxNzUsImV4cCI6MjEwNTgwMjE3NX0.0I-fqB1fVLaKR2Dz8jdrccns5tXdjDAqZdHxSwgukNk";
+const FN_UBAH_PIN = "Ubah_PIN";
+
+const SESSION = JSON.parse(localStorage.getItem('staffSession') || 'null');
+if (!SESSION) {
+  window.location.replace('login.html');
+  throw new Error('STOP: belum login');
+}
+if (SESSION.wajibGantiPin) {
+  document.getElementById('judul').textContent = 'Ganti PIN Awal';
+  document.getElementById('sub').textContent = 'Demi keamanan, ganti PIN awal dari Admin dengan PIN pilihan Anda sendiri.';
+  document.getElementById('linkKembali').style.display = 'none';
+}
+
+function tanganiSesi(hasil) {
+  // Server menolak karena token tidak sah atau sudah berakhir: kembali ke halaman login
+  if (hasil && hasil.kode === 'SESI_TIDAK_VALID') {
+    localStorage.removeItem('staffSession');
+    alert('Sesi Anda sudah berakhir. Silakan login ulang.');
+    window.location.href = 'login.html';
+  }
+  return hasil;
+}
+
+function tokenSesi() {
+  try { return (JSON.parse(localStorage.getItem('staffSession') || 'null') || {}).token || null; }
+  catch (e) { return null; }
+}
+
+function bacaSesi() {
+  try { return JSON.parse(localStorage.getItem('staffSession') || 'null'); } catch (e) { return null; }
+}
+
+// Token berlaku pendek (15 menit). Halaman memperbaruinya otomatis di belakang layar.
+// Pembaruan ditolak server kalau akunnya sudah dinonaktifkan, dan peran dibaca ulang dari database.
+let _pembaruan = null;
+function perbaruiSesi() {
+  if (_pembaruan) return _pembaruan; // satu pembaruan saja pada satu waktu
+  _pembaruan = fetch(`${SUPABASE_URL}/functions/v1/Perbarui_Sesi`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${ANON_KEY}`, "apikey": ANON_KEY },
+    body: JSON.stringify({ token: tokenSesi() })
+  })
+    .then(r => r.json())
+    .then(h => {
+      if (h && h.token) {
+        const s = bacaSesi() || {};
+        s.token = h.token; s.tokenExp = h.token_exp; s.roles = h.roles; s.is_admin = h.is_admin;
+        localStorage.setItem('staffSession', JSON.stringify(s));
+        return true;
+      }
+      if (h && h.kode === 'SESI_TIDAK_VALID') tanganiSesi(h); // akun nonaktif atau sesi habis: keluar
+      return false;
+    })
+    .catch(() => false) // jaringan putus: jangan mengeluarkan orang
+    .finally(() => { _pembaruan = null; });
+  return _pembaruan;
+}
+
+async function pastikanSesiSegar() {
+  const s = bacaSesi();
+  if (!s || !s.token) return;
+  const sisaMs = s.tokenExp ? Date.parse(s.tokenExp) - Date.now() : 0;
+  if (sisaMs < 2 * 60 * 1000) await perbaruiSesi();
+}
+
+async function panggil(fn, body, sudahCoba) {
+  await pastikanSesiSegar();
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/${fn}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${ANON_KEY}`, "apikey": ANON_KEY },
+    body: JSON.stringify({ ...(body || {}), token: tokenSesi() })
+  });
+  const hasil = await res.json();
+  if (hasil && hasil.kode === 'SESI_TIDAK_VALID' && !sudahCoba && await perbaruiSesi()) {
+    return panggil(fn, body, true); // token baru saja diperbarui: ulangi sekali
+  }
+  return tanganiSesi(hasil);
+}
+
+const INPUTS = ['pinLama', 'pinBaru', 'pinUlang'];
+INPUTS.forEach((id, i) => {
+  const el = document.getElementById(id);
+  el.addEventListener('input', function () { this.value = this.value.replace(/[^0-9]/g, ''); });
+  el.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    if (i < INPUTS.length - 1) document.getElementById(INPUTS[i + 1]).focus(); else simpan();
+  });
+});
+
+function pesan(tipe, teks) {
+  const m = document.getElementById('msg');
+  m.className = 'msg show ' + tipe;
+  m.textContent = teks;
+}
+
+// Aturan yang sama dengan di server (server tetap memeriksa ulang)
+function pinLemah(p) {
+  return /^(\d)\1+$/.test(p) || '0123456789'.includes(p) || '9876543210'.includes(p);
+}
+
+async function simpan() {
+  const lama = document.getElementById('pinLama').value.trim();
+  const baru = document.getElementById('pinBaru').value.trim();
+  const ulang = document.getElementById('pinUlang').value.trim();
+
+  if (!/^(\d{6}|\d{8})$/.test(lama)) return pesan('err', 'Isi PIN lama Anda dengan benar.');
+  if (!/^\d{8}$/.test(baru)) return pesan('err', 'PIN baru harus 8 angka.');
+  if (pinLemah(baru)) return pesan('err', 'PIN baru terlalu mudah ditebak (angka berulang atau berurutan). Pilih yang lain.');
+  if (baru === lama) return pesan('err', 'PIN baru tidak boleh sama dengan PIN lama.');
+  if (baru !== ulang) return pesan('err', 'Pengulangan PIN baru tidak sama.');
+
+  const btn = document.getElementById('btnSimpan');
+  btn.disabled = true; btn.textContent = 'Menyimpan...';
+  pesan('', 'Menyimpan...');
+  try {
+    const h = await panggil(FN_UBAH_PIN, { pin_lama: lama, pin_baru: baru });
+    if (h.error) {
+      pesan('err', h.error);
+      btn.disabled = false; btn.textContent = 'Simpan PIN Baru';
+      return;
+    }
+    const s = bacaSesi() || {};
+    s.wajibGantiPin = false;
+    localStorage.setItem('staffSession', JSON.stringify(s));
+    pesan('ok', 'PIN berhasil diubah. Gunakan PIN baru ini untuk login berikutnya.');
+    setTimeout(() => { window.location.href = 'ajukan-cn.html'; }, 1500);
+  } catch (e) {
+    pesan('err', 'Gagal: ' + e.message);
+    btn.disabled = false; btn.textContent = 'Simpan PIN Baru';
+  }
+}
+</script>
+</body>
+</html>
