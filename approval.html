@@ -144,6 +144,16 @@
     .topbar .nav a.hide{display:none}
   }
 </style>
+<style>
+  .req-top > div:first-child{min-width:0}
+  .lencana-region{display:inline-block;flex-shrink:1;max-width:64%;font-size:10.5px;font-weight:800;padding:4px 10px;border-radius:999px;line-height:1.3;text-align:right;overflow-wrap:normal;word-break:normal}
+  .barregion{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:2px}
+  .barregion .judul{font-size:12px;font-weight:700;color:var(--muted);margin-right:4px}
+  .chip-region{border:1.5px solid var(--line);background:#fff;color:var(--muted);font-family:inherit;font-weight:700;font-size:12px;padding:7px 12px;border-radius:999px;cursor:pointer}
+  .chip-region.aktif{background:var(--violet);border-color:var(--violet);color:#fff}
+  .label-kasbon{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:10px 0 6px}
+  .label-kasbon b{color:var(--ink)}
+</style>
 </head>
 <body>
 
@@ -180,6 +190,7 @@
         <a href="approval.html">Approval</a>
         <a href="dashboard.html">Dashboard</a>
         <a href="laporan-user.html">Laporan</a>
+        <a href="rekap-periode.html">Rekap</a>
         <a href="admin-import.html" class="hide" id="navImport">Import</a>
         <a href="koreksi-invoice.html">Koreksi</a>
         <a href="admin-tools.html" class="hide" id="navTools">Tools</a>
@@ -285,6 +296,7 @@ function renderTabs() {
 
 function gantiTab(stage) {
   ACTIVE_STAGE = stage;
+  REGION_AKTIF = ''; // saringan region dimulai dari Semua di setiap tab
   renderTabs();
   loadList();
 }
@@ -359,6 +371,31 @@ async function panggil(fn, body, sudahCoba) {
   return tanganiSesi(hasil);
 }
 
+let REGION_AKTIF = '';
+let REGION_LIST = [];
+function barRegionHTML(data) {
+  if (REGION_LIST.length < 2) return '';
+  const hitung = {}; data.forEach(r => { const k = r.region || '-'; hitung[k] = (hitung[k] || 0) + 1; });
+  return `<div class="barregion"><span class="judul">Region:</span>
+    <button class="chip-region ${REGION_AKTIF ? '' : 'aktif'}" onclick="pilihRegion('')">Semua (${data.length})</button>
+    ${REGION_LIST.map((rg, i) => `<button class="chip-region ${REGION_AKTIF === rg ? 'aktif' : ''}" onclick="pilihRegion(${i})">${esc(rg)} (${hitung[rg]})</button>`).join('')}
+  </div>`;
+}
+function pilihRegion(i) {
+  REGION_AKTIF = (i === '' ? '' : REGION_LIST[i]);
+  document.querySelectorAll('#listArea .chip-region').forEach((b, n) => b.classList.toggle('aktif', REGION_AKTIF === '' ? n === 0 : n === Number(i) + 1));
+  terapkanSaring();
+}
+function terapkanSaring() {
+  const q = ((document.getElementById('massalCari') || {}).value || '').trim().toLowerCase();
+  document.querySelectorAll('#listArea .card').forEach(k => {
+    const cocok = (!REGION_AKTIF || k.dataset.region === REGION_AKTIF) && (!q || (k.dataset.cari || '').includes(q));
+    k.style.display = cocok ? '' : 'none';
+    if (!cocok) { const c = k.querySelector('.cek-massal'); if (c) c.checked = false; } // yang tersembunyi tidak boleh ikut tersetujui
+  });
+  hitungMassal();
+}
+
 async function loadList() {
   document.getElementById('listTitle').textContent = `Menunggu ${STAGE_LABEL[ACTIVE_STAGE]}`;
   const area = document.getElementById('listArea');
@@ -372,8 +409,12 @@ async function loadList() {
     });
     const data = hasil.data || [];
     if (!data.length) { area.innerHTML = '<div class="empty">Tidak ada yang menunggu. 👍</div>'; return; }
-    area.innerHTML = barMassalHTML(data) + data.map(r => renderCard(r)).join('');
-    hitungMassal();
+    data.sort((a, b) => String(a.region || '').localeCompare(String(b.region || ''), 'id') || String(a.created_at || '').localeCompare(String(b.created_at || '')));
+    REGION_LIST = Array.from(new Set(data.map(r => r.region || '-')));
+    if (REGION_AKTIF && !REGION_LIST.includes(REGION_AKTIF)) REGION_AKTIF = '';
+    area.innerHTML = barRegionHTML(data) + barMassalHTML(data) + data.map(r => renderCard(r)).join('');
+    area.querySelectorAll('.card[id^="card-"]').forEach(k => { const r = CARD_DATA[k.id.replace('card-', '')]; if (r) k.dataset.region = r.region || '-'; });
+    terapkanSaring();
   } catch (e) {
     area.innerHTML = `<div class="empty">Gagal memuat: ${e.message}</div>`;
   }
@@ -392,15 +433,16 @@ function renderCard(r) {
       <div class="req-top">
         <div>
           <div class="req-nominal">${rupiah(r.jumlah_diminta)}</div>
-          <div class="req-nama">${r.nama_user || '(tanpa nama)'}</div>
-          <div class="req-sub">${r.id_user} · ${r.region}</div>
+          <div class="req-nama">${esc(r.nama_user) || '(tanpa nama)'}</div>
+          <div class="req-sub">${esc(r.id_user)} · ${esc(r.region)}</div>
         </div>
+        ${lencanaRegion(r.region)}
       </div>
-      <div class="req-ket">${r.keterangan || '-'}</div>
-      <div class="req-tgl">Diajukan oleh ${r.diajukan_oleh || '-'} · ${new Date(r.created_at).toLocaleString('id-ID')}</div>
+      <div class="req-ket">${esc(r.keterangan) || '-'}</div>
+      <div class="req-tgl">Diajukan oleh ${esc(r.diajukan_oleh) || '-'} · ${new Date(r.created_at).toLocaleString('id-ID')}</div>
       ${barisGaransi(r)}
 
-      ${perluKasbon ? `<label>No. Kasbon (wajib untuk Setuju)</label><input type="text" id="kasbon-${r.id}" placeholder="Contoh: KSB-2026-001">` : ''}
+      ${perluKasbon ? `<label class="label-kasbon">No. Kasbon region <b>${esc(r.region || '-')}</b> (wajib untuk Setuju)</label><input type="text" id="kasbon-${r.id}" placeholder="Contoh: KSB-2026-001">` : ''}
       <label>Catatan (opsional)</label>
       <input type="text" id="catatan-${r.id}" placeholder="Catatan...">
 
@@ -415,16 +457,23 @@ function renderCard(r) {
 }
 
 // ===== Cetak Nota 1 Request CN (sama persis seperti di ajukan-cn.html) =====
+function fmtWaktu(v) {
+  if (!v) return '-';
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return esc(v);
+  return d.toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '');
+}
+
 function buatNotaHTML(r) {
   let html = `<h2>Pengajuan Request CN</h2>`;
   html += `<table>
-    <tr><td style="width:35%"><b>Nama User</b></td><td>: ${r.nama_user || '-'} (${r.id_user})</td></tr>
-    <tr><td><b>Region</b></td><td>: ${r.region || '-'}</td></tr>
-    <tr><td><b>No. Kasbon</b></td><td>: ${r.no_kasbon || '-'}</td></tr>
+    <tr><td style="width:35%"><b>Nama User</b></td><td>: ${esc(r.nama_user) || '-'} (${esc(r.id_user)})</td></tr>
+    <tr><td><b>Region</b></td><td>: ${esc(r.region) || '-'}</td></tr>
+    <tr><td><b>No. Kasbon</b></td><td>: ${esc(r.no_kasbon) || '-'}</td></tr>
     <tr><td><b>Jumlah Diminta</b></td><td>: ${rupiah(r.jumlah_diminta)}</td></tr>
-    <tr><td><b>Keterangan</b></td><td>: ${r.keterangan || '-'}</td></tr>
-    <tr><td><b>Diajukan Oleh</b></td><td>: ${r.diajukan_oleh || '-'}</td></tr>
-    <tr><td><b>Tanggal Diajukan</b></td><td>: ${new Date(r.created_at).toLocaleString('id-ID')}</td></tr>
+    <tr><td><b>Keterangan</b></td><td>: ${esc(r.keterangan) || '-'}</td></tr>
+    <tr><td><b>Diajukan Oleh</b></td><td>: ${esc(r.diajukan_oleh) || '-'}</td></tr>
+    <tr><td><b>Tanggal Diajukan</b></td><td>: ${fmtWaktu(r.created_at)}</td></tr>
     <tr><td><b>Status Saat Ini</b></td><td>: ${NJ.status(r.status)}</td></tr>
     ${r.link_guarantee ? `<tr><td><b>Surat Jaminan</b></td><td>: Terlampir</td></tr>` : ''}
   </table>`;
@@ -441,14 +490,14 @@ function buatNotaHTML(r) {
   ];
   tahapList.forEach(([label, approver, tgl, catatan]) => {
     if (!approver) return;
-    html += `<tr><td>${label}</td><td>${approver}</td><td>${tgl || '-'}</td><td>${catatan || '-'}</td></tr>`;
+    html += `<tr><td>${esc(label)}</td><td>${esc(approver)}</td><td>${fmtWaktu(tgl)}</td><td>${esc(catatan) || '-'}</td></tr>`;
   });
   html += '</table>';
 
   if (r.status === 'Ditolak') {
     html += `<div style="margin-top:10px;padding:8px;background:#fde8e6;border-radius:6px;font-size:12px">
-      <b>Ditolak pada tahap ${r.ditolak_pada_tahap || '-'}</b> oleh ${r.ditolak_oleh || '-'} pada ${r.tanggal_ditolak || '-'}<br>
-      Alasan: ${r.alasan_ditolak || '-'}
+      <b>Ditolak pada tahap ${esc(r.ditolak_pada_tahap) || '-'}</b> oleh ${esc(r.ditolak_oleh) || '-'} pada ${fmtWaktu(r.tanggal_ditolak)}<br>
+      Alasan: ${esc(r.alasan_ditolak) || '-'}
     </div>`;
   }
 
@@ -508,16 +557,7 @@ function barMassalHTML(data) {
 function kartuTampil() {
   return Array.from(document.querySelectorAll('#listArea .cek-massal')).filter(c => c.closest('.card').style.display !== 'none');
 }
-function saringMassal() {
-  const q = (document.getElementById('massalCari').value || '').trim().toLowerCase();
-  document.querySelectorAll('#listArea .cek-massal').forEach(c => {
-    const kartu = c.closest('.card');
-    const cocok = !q || (kartu.dataset.cari || '').includes(q);
-    kartu.style.display = cocok ? '' : 'none';
-    if (!cocok) c.checked = false; // yang tersembunyi tidak boleh ikut tersetujui
-  });
-  hitungMassal();
-}
+function saringMassal() { terapkanSaring(); }
 function pilihSemuaMassal() {
   // Yang perlu diperiksa (Surat Jaminan, nominal besar) tidak ikut dicentang otomatis
   kartuTampil().forEach(c => { c.checked = !perluPerhatian(CARD_DATA[c.value]); });
@@ -677,6 +717,10 @@ function barisGaransi(r) {
     `. <a href="${esc(link)}" target="_blank" rel="noopener noreferrer" style="color:#5B21B6;font-weight:700">Lihat berkas</a></div>`;
 }
 
+const WARNA_REGION = [['#EDE7FD','#5B21B6'],['#DDFBEA','#0E6B45'],['#FFE9F1','#B3175A'],['#FFF4E0','#8A5A12'],['#E3F2FD','#0D47A1'],['#F3E5F5','#6A1B9A'],['#E0F7F4','#00695C'],['#FFEBEE','#B71C1C']];
+function warnaRegion(rg) { let h = 0; String(rg || '').split('').forEach(c => { h = (h * 31 + c.charCodeAt(0)) >>> 0; }); return WARNA_REGION[h % WARNA_REGION.length]; }
+function lencanaRegion(rg) { const w = warnaRegion(rg); return `<span class="lencana-region" style="background:${w[0]};color:${w[1]}">${esc(rg || '-').replace(/\+/g, '+<wbr>')}</span>`; }
+
 function kepalaKartu(r) {
   return `
     <div class="req-top">
@@ -685,6 +729,7 @@ function kepalaKartu(r) {
         <div class="req-nama">${esc(r.nama_user) || '(tanpa nama)'}</div>
         <div class="req-sub">${esc(r.id_user)} · ${esc(r.region)}</div>
       </div>
+      ${lencanaRegion(r.region)}
     </div>
     <div class="req-ket">${esc(r.keterangan) || '-'}</div>
     <div class="req-tgl">Diajukan oleh ${esc(r.diajukan_oleh) || '-'} · ${new Date(r.created_at).toLocaleString('id-ID')}</div>
@@ -864,7 +909,7 @@ loadList();
   var peran=(S.roles||[]).map(function(r){return r.role;}), admin=!!S.is_admin, jr=peran.indexOf('JR_FINANCE_MANAGER')>-1;
   var punyaTahap=['DM','SM','FINANCE_STAFF','JR_FINANCE_MANAGER','BOM','DIREKTUR'].some(function(r){return peran.indexOf(r)>-1;});
   // Menu yang hanya muncul bila orangnya memang punya akses
-  var boleh={'approval.html':punyaTahap,'dashboard.html':admin||jr,'laporan-user.html':admin||jr,'admin-import.html':admin,'admin-tools.html':admin,'admin-staff.html':admin,'admin-tim.html':admin,'koreksi-invoice.html':admin||jr};
+  var boleh={'approval.html':punyaTahap,'dashboard.html':admin||jr,'laporan-user.html':admin||jr,'admin-import.html':admin,'admin-tools.html':admin,'admin-staff.html':admin,'admin-tim.html':admin,'koreksi-invoice.html':admin||jr,'rekap-periode.html':admin||jr||peran.indexOf('FINANCE_STAFF')>-1};
   document.querySelectorAll('.topbar .nav a').forEach(function(a){
     var t=a.getAttribute('href');
     if(t===h)a.classList.add('aktif');

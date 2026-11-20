@@ -159,6 +159,7 @@
         <a href="approval.html">Approval</a>
         <a href="dashboard.html">Dashboard</a>
         <a href="laporan-user.html">Laporan</a>
+        <a href="rekap-periode.html">Rekap</a>
         <a href="admin-import.html" class="hide" id="navImport">Import</a>
         <a href="koreksi-invoice.html">Koreksi</a>
         <a href="admin-tools.html" class="hide" id="navTools">Tools</a>
@@ -713,7 +714,7 @@ function downloadPDF(jenis, tombol) {
   var peran=(S.roles||[]).map(function(r){return r.role;}), admin=!!S.is_admin, jr=peran.indexOf('JR_FINANCE_MANAGER')>-1;
   var punyaTahap=['DM','SM','FINANCE_STAFF','JR_FINANCE_MANAGER','BOM','DIREKTUR'].some(function(r){return peran.indexOf(r)>-1;});
   // Menu yang hanya muncul bila orangnya memang punya akses
-  var boleh={'approval.html':punyaTahap,'dashboard.html':admin||jr,'laporan-user.html':admin||jr,'admin-import.html':admin,'admin-tools.html':admin,'admin-staff.html':admin,'admin-tim.html':admin,'koreksi-invoice.html':admin||jr};
+  var boleh={'approval.html':punyaTahap,'dashboard.html':admin||jr,'laporan-user.html':admin||jr,'admin-import.html':admin,'admin-tools.html':admin,'admin-staff.html':admin,'admin-tim.html':admin,'koreksi-invoice.html':admin||jr,'rekap-periode.html':admin||jr||peran.indexOf('FINANCE_STAFF')>-1};
   document.querySelectorAll('.topbar .nav a').forEach(function(a){
     var t=a.getAttribute('href');
     if(t===h)a.classList.add('aktif');

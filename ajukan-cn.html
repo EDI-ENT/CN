@@ -336,6 +336,7 @@
         <a href="approval.html">Approval</a>
         <a href="dashboard.html">Dashboard</a>
         <a href="laporan-user.html">Laporan</a>
+        <a href="rekap-periode.html">Rekap</a>
         <a href="admin-import.html" class="hide" id="navImport">Import</a>
         <a href="koreksi-invoice.html">Koreksi</a>
         <a href="admin-tools.html" class="hide" id="navTools">Tools</a>
@@ -357,6 +358,7 @@
     <!-- User terpilih + form -->
     <div class="card hide" id="cardForm">
       <h2>Ajukan Request CN</h2>
+      <div class="banner err" id="tutupBanner">Pengajuan CN sedang ditutup untuk rekap periode (tanggal 20 mulai pukul 12.00 WIB). Dibuka lagi tanggal 21 pukul 00.00 WIB.</div>
       <div class="chip" id="userChip"></div>
       <button class="ganti" onclick="gantiUser()">Ganti User</button>
 
@@ -691,7 +693,22 @@ async function cekKelayakan(jumlah) {
 }
 
 // ===== Submit CN =====
+// Pengajuan ditutup tanggal 20 mulai pukul 12.00 WIB sampai tanggal 21. Ini hanya pemberitahuan di layar;
+// yang menentukan tetap server (Submit_req_CN), memakai jam server.
+function pengajuanDitutup() {
+  const wib = new Date(Date.now() + 7 * 3600 * 1000);
+  return wib.getUTCDate() === 20 && wib.getUTCHours() >= 12;
+}
+function tampilkanStatusPengajuan() {
+  const tutup = pengajuanDitutup();
+  const b = document.getElementById('tutupBanner'); if (b) b.classList.toggle('show', tutup);
+  const btn = document.getElementById('btnSubmit'); if (btn) btn.disabled = tutup;
+}
+tampilkanStatusPengajuan();
+setInterval(tampilkanStatusPengajuan, 60000);
+
 async function submitCN() {
+  if (pengajuanDitutup()) { tampilkanStatusPengajuan(); return; } // jangan upload Surat Jaminan kalau pengajuan ditutup
   const jumlah = Number(document.getElementById('jumlahInput').value);
   const pengaju = SESSION.nama; // diambil dari sesi login, bukan ketik manual
   const keterangan = document.getElementById('keteranganInput').value.trim();
@@ -858,16 +875,23 @@ function renderRiwayat() {
 }
 
 // ===== Cetak Nota 1 Request CN (dipakai dari Riwayat) =====
+function fmtWaktu(v) {
+  if (!v) return '-';
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return esc(v);
+  return d.toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '');
+}
+
 function buatNotaHTML(r) {
   let html = `<h2>Pengajuan Request CN</h2>`;
   html += `<table>
-    <tr><td style="width:35%"><b>Nama User</b></td><td>: ${r.nama_user || '-'} (${r.id_user})</td></tr>
-    <tr><td><b>Region</b></td><td>: ${r.region || '-'}</td></tr>
-    <tr><td><b>No. Kasbon</b></td><td>: ${r.no_kasbon || '-'}</td></tr>
+    <tr><td style="width:35%"><b>Nama User</b></td><td>: ${esc(r.nama_user) || '-'} (${esc(r.id_user)})</td></tr>
+    <tr><td><b>Region</b></td><td>: ${esc(r.region) || '-'}</td></tr>
+    <tr><td><b>No. Kasbon</b></td><td>: ${esc(r.no_kasbon) || '-'}</td></tr>
     <tr><td><b>Jumlah Diminta</b></td><td>: ${rupiah(r.jumlah_diminta)}</td></tr>
-    <tr><td><b>Keterangan</b></td><td>: ${r.keterangan || '-'}</td></tr>
-    <tr><td><b>Diajukan Oleh</b></td><td>: ${r.diajukan_oleh || '-'}</td></tr>
-    <tr><td><b>Tanggal Diajukan</b></td><td>: ${new Date(r.created_at).toLocaleString('id-ID')}</td></tr>
+    <tr><td><b>Keterangan</b></td><td>: ${esc(r.keterangan) || '-'}</td></tr>
+    <tr><td><b>Diajukan Oleh</b></td><td>: ${esc(r.diajukan_oleh) || '-'}</td></tr>
+    <tr><td><b>Tanggal Diajukan</b></td><td>: ${fmtWaktu(r.created_at)}</td></tr>
     <tr><td><b>Status Saat Ini</b></td><td>: ${NJ.status(r.status)}</td></tr>
     ${r.link_guarantee ? `<tr><td><b>Surat Jaminan</b></td><td>: Terlampir</td></tr>` : ''}
   </table>`;
@@ -884,14 +908,14 @@ function buatNotaHTML(r) {
   ];
   tahapList.forEach(([label, approver, tgl, catatan]) => {
     if (!approver) return; // lewati tahap yang belum diproses
-    html += `<tr><td>${label}</td><td>${approver}</td><td>${tgl || '-'}</td><td>${catatan || '-'}</td></tr>`;
+    html += `<tr><td>${esc(label)}</td><td>${esc(approver)}</td><td>${fmtWaktu(tgl)}</td><td>${esc(catatan) || '-'}</td></tr>`;
   });
   html += '</table>';
 
   if (r.status === 'Ditolak') {
     html += `<div style="margin-top:10px;padding:8px;background:#fde8e6;border-radius:6px;font-size:12px">
-      <b>Ditolak pada tahap ${r.ditolak_pada_tahap || '-'}</b> oleh ${r.ditolak_oleh || '-'} pada ${r.tanggal_ditolak || '-'}<br>
-      Alasan: ${r.alasan_ditolak || '-'}
+      <b>Ditolak pada tahap ${esc(r.ditolak_pada_tahap) || '-'}</b> oleh ${esc(r.ditolak_oleh) || '-'} pada ${fmtWaktu(r.tanggal_ditolak)}<br>
+      Alasan: ${esc(r.alasan_ditolak) || '-'}
     </div>`;
   }
 
@@ -900,7 +924,7 @@ function buatNotaHTML(r) {
       <tr><td style="width:35%"><b>Jumlah Penyelesaian</b></td><td>: ${rupiah(r.jumlah_penyelesaian)}</td></tr>
       <tr><td><b>Jumlah Mutasi</b></td><td>: ${rupiah(r.jumlah_mutasi)}</td></tr>
       <tr><td><b>Sisa Dikembalikan</b></td><td>: ${rupiah(r.sisa)}</td></tr>
-      <tr><td><b>Direalisasi Oleh</b></td><td>: ${r.realisasi_oleh || '-'}</td></tr>
+      <tr><td><b>Direalisasi Oleh</b></td><td>: ${esc(r.realisasi_oleh) || '-'}</td></tr>
     </table>`;
   }
 
@@ -926,7 +950,7 @@ loadRiwayat();
   var peran=(S.roles||[]).map(function(r){return r.role;}), admin=!!S.is_admin, jr=peran.indexOf('JR_FINANCE_MANAGER')>-1;
   var punyaTahap=['DM','SM','FINANCE_STAFF','JR_FINANCE_MANAGER','BOM','DIREKTUR'].some(function(r){return peran.indexOf(r)>-1;});
   // Menu yang hanya muncul bila orangnya memang punya akses
-  var boleh={'approval.html':punyaTahap,'dashboard.html':admin||jr,'laporan-user.html':admin||jr,'admin-import.html':admin,'admin-tools.html':admin,'admin-staff.html':admin,'admin-tim.html':admin,'koreksi-invoice.html':admin||jr};
+  var boleh={'approval.html':punyaTahap,'dashboard.html':admin||jr,'laporan-user.html':admin||jr,'admin-import.html':admin,'admin-tools.html':admin,'admin-staff.html':admin,'admin-tim.html':admin,'koreksi-invoice.html':admin||jr,'rekap-periode.html':admin||jr||peran.indexOf('FINANCE_STAFF')>-1};
   document.querySelectorAll('.topbar .nav a').forEach(function(a){
     var t=a.getAttribute('href');
     if(t===h)a.classList.add('aktif');
